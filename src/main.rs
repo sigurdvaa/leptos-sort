@@ -23,8 +23,8 @@ fn Canvas() -> impl IntoView {
     let draw_to_canvas = move |_| {
         let canvas = canvas_ref.get().expect("canvas should be created");
 
-        canvas.set_width(600);
-        canvas.set_height(600);
+        // canvas.set_width(600);
+        // canvas.set_height(600);
 
         let context = canvas
             .get_context("2d")
@@ -65,9 +65,13 @@ fn Canvas() -> impl IntoView {
     };
 
     view! {
-        <div class="container-fluid text-center">
-            <button class="btn btn-primary" on:click=draw_to_canvas>Draw</button>
-            <canvas class="d-inline" _ref=canvas_ref />
+        <div class="container-fluid my-3">
+            <div class="d-flex justify-content-center mb-3">
+                <button class="col-1 btn btn-primary" on:click=draw_to_canvas>Draw</button>
+            </div>
+            <div class="d-flex justify-content-center mb-3">
+                <canvas ref=canvas_ref />
+            </div>
         </div>
     }
 }
