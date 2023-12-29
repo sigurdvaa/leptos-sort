@@ -1,0 +1,20 @@
+[package]
+name = "leptos-sort"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+leptos = { version = "0.5.4", features = ["csr"] }
+log = "0.4.20"
+console_log = { version = "1"}
+console_error_panic_hook = { version = "0.1"}
+wasm-bindgen = { version = "0.2" }
+web-sys = { version = "0.3.66", features = [
+  'CanvasRenderingContext2d',
+  'Document',
+  'Element',
+  'HtmlCanvasElement',
+  'Window',
+] }
