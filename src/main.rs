@@ -1,6 +1,11 @@
+use leptos::html::Canvas;
 use leptos::wasm_bindgen::JsCast;
 use leptos::*;
-use wasm_bindgen::JsValue;
+use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::{prelude::Closure, JsValue};
+
+type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
 
 fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
@@ -18,14 +23,31 @@ fn App() -> impl IntoView {
 
 #[component]
 fn Canvas() -> impl IntoView {
-    let canvas_ref = create_node_ref::<leptos::html::Canvas>();
+    let duration = 3000.0;
+    let mut start_time = 0.0;
+    let mut i = 0.0;
 
-    let draw_to_canvas = move |_| {
-        let canvas = canvas_ref.get().expect("canvas should be created");
+    let canvas_ref = create_node_ref::<Canvas>();
+    let window = web_sys::window().unwrap();
+    let window_clone = window.clone();
+    let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
+    let draw_clone = draw.clone();
+
+    let mut setup = false;
+
+    *draw.borrow_mut() = Closure::new(move |timestamp| {
+        if i == 0.0 {
+            start_time = timestamp;
+        }
+        i += 1.0;
+
+        let canvas = canvas_ref.get_untracked().expect("canvas should exist");
 
         // canvas.set_width(600);
         // canvas.set_height(600);
 
+        let canvas_w = canvas.width() as f64;
+        let canvas_h = canvas.height() as f64;
         let context = canvas
             .get_context("2d")
             .unwrap()
@@ -33,10 +55,21 @@ fn Canvas() -> impl IntoView {
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .unwrap();
 
-        context.begin_path();
+        if !setup {
+            // Set color
+            context.set_stroke_style(&JsValue::from("white"));
+            context.set_fill_style(&JsValue::from("white"));
+            context.set_font("26px sans-serif");
+            setup = true;
+        }
 
-        // Set color
-        context.set_stroke_style(&JsValue::from("white"));
+        // Clear
+        context.clear_rect(0.0, 0.0, canvas_w, canvas_h);
+
+        // Write text
+        let _ = context.fill_text(&format!("Frame: {i}"), 0.0, 150.0);
+
+        context.begin_path();
 
         // Draw the outer circle.
         context
@@ -61,7 +94,23 @@ fn Canvas() -> impl IntoView {
             .arc(90.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
             .unwrap();
 
+        context.close_path();
+
         context.stroke();
+
+        let delta = timestamp - start_time;
+        if delta < duration {
+            let fps = i / delta * 1000.0;
+            logging::log!("Iter: {i}\n  Time: {delta}\n  FPS: {fps}");
+            let _ =
+                window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
+        } else {
+            i = 0.0;
+        }
+    });
+
+    let draw_to_canvas = move |_| {
+        let _ = window.request_animation_frame(draw.borrow().as_ref().unchecked_ref());
     };
 
     view! {
