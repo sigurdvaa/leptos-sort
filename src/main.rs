@@ -1,9 +1,9 @@
 use leptos::html::Canvas;
-use leptos::wasm_bindgen::JsCast;
 use leptos::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-use wasm_bindgen::{prelude::Closure, JsValue};
+use wasm_bindgen::{prelude::Closure, Clamped, JsCast, JsValue};
+use web_sys::ImageData;
 
 type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
 
@@ -17,12 +17,13 @@ fn main() {
 #[component]
 fn App() -> impl IntoView {
     view! {
-        <Canvas/>
+        <CanvasDraw/>
+        <CanvasBitmap/>
     }
 }
 
 #[component]
-fn Canvas() -> impl IntoView {
+fn CanvasDraw() -> impl IntoView {
     let duration = 3000.0;
     let mut start_time = 0.0;
     let mut i = 0.0;
@@ -106,6 +107,10 @@ fn Canvas() -> impl IntoView {
                 window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
         } else {
             i = 0.0;
+            let bmp = context
+                .get_image_data(0.0, 0.0, canvas_w, canvas_h)
+                .unwrap();
+            logging::log!("{:?}", bmp.data());
         }
     });
 
@@ -116,10 +121,88 @@ fn Canvas() -> impl IntoView {
     view! {
         <div class="container-fluid my-3">
             <div class="d-flex justify-content-center mb-3">
-                <button class="col-1 btn btn-primary" on:click=draw_to_canvas>Draw</button>
+                <button class="col-2 btn btn-primary" on:click=draw_to_canvas>
+                    CanvasDraw
+                </button>
             </div>
             <div class="d-flex justify-content-center mb-3">
-                <canvas ref=canvas_ref />
+                <canvas class="border border-primary" ref=canvas_ref />
+            </div>
+        </div>
+    }
+}
+
+#[component]
+fn CanvasBitmap() -> impl IntoView {
+    let duration = 3000.0;
+    let mut start_time = 0.0;
+    let mut i = 0.0;
+
+    let canvas_ref = create_node_ref::<Canvas>();
+    let window = web_sys::window().unwrap();
+    let window_clone = window.clone();
+    let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
+    let draw_clone = draw.clone();
+    // let mut bmp = ImageData::new_with_sw(1, 1).expect("tmp placeholder created");
+    let mut data: Vec<u8> = Vec::new();
+
+    let mut setup = false;
+
+    *draw.borrow_mut() = Closure::new(move |timestamp| {
+        if i == 0.0 {
+            start_time = timestamp;
+        }
+        i += 1.0;
+
+        let canvas = canvas_ref.get_untracked().expect("canvas should exist");
+
+        // canvas.set_width(600);
+        // canvas.set_height(600);
+
+        let canvas_w = canvas.width() as f64;
+        let canvas_h = canvas.height() as f64;
+        let context = canvas
+            .get_context("2d")
+            .unwrap()
+            .unwrap()
+            .dyn_into::<web_sys::CanvasRenderingContext2d>()
+            .unwrap();
+
+        if !setup {
+            setup = true;
+            data = vec![255; canvas_w as usize * canvas_h as usize * 4];
+        }
+
+        let clamped = Clamped(&data[..]);
+        let image =
+            ImageData::new_with_u8_clamped_array_and_sh(clamped, canvas_w as u32, canvas_h as u32)
+                .expect("imagedata created");
+        let _ = context.put_image_data(&image, 0.0, 0.0);
+
+        let delta = timestamp - start_time;
+        if delta < duration {
+            let fps = i / delta * 1000.0;
+            logging::log!("Iter: {i}\n  Time: {delta}\n  FPS: {fps}");
+            let _ =
+                window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
+        } else {
+            i = 0.0;
+        }
+    });
+
+    let draw_to_canvas = move |_| {
+        let _ = window.request_animation_frame(draw.borrow().as_ref().unchecked_ref());
+    };
+
+    view! {
+        <div class="container-fluid my-3">
+            <div class="d-flex justify-content-center mb-3">
+                <button class="col-2 btn btn-primary" on:click=draw_to_canvas>
+                    CanvasBitmap
+                </button>
+            </div>
+            <div class="d-flex justify-content-center mb-3">
+                <canvas class="border border-primary" ref=canvas_ref />
             </div>
         </div>
     }
