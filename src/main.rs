@@ -16,7 +16,46 @@ fn main() {
 #[component]
 fn App() -> impl IntoView {
     view! {
-        <Canvas/>
+        <div class="d-flex flex-row">
+            <Sidebar/>
+            <Canvas/>
+        </div>
+    }
+}
+
+#[component]
+fn Sidebar() -> impl IntoView {
+    view! {
+        <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark" style="width: 280px;">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <i class="bi bi-filter fs-3 me-2 text-danger"></i>
+                <span class="fs-4 text-danger">Sort</span>
+            </a>
+            <hr/>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" aria-current="page">
+                        <i class="bi bi-house me-2"></i>
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link text-white">
+                        Sort1
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link text-white">
+                        Sort2
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link text-white">
+                        Sort3
+                    </a>
+                </li>
+            </ul>
+        </div>
     }
 }
 
