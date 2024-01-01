@@ -132,27 +132,44 @@ fn CanvasDraw() -> impl IntoView {
     }
 }
 
+fn draw_rect(
+    data: &mut [u8],
+    width: usize,
+    start_x: usize,
+    start_y: usize,
+    end_x: usize,
+    end_y: usize,
+) {
+    let mut px;
+    for x in start_x..end_x {
+        for y in start_y..end_y {
+            px = (x + (y * width)) * 4;
+            data[px] = 255;
+            data[px + 1] = 255;
+            data[px + 2] = 255;
+            data[px + 3] = 255;
+        }
+    }
+}
+
 #[component]
 fn CanvasBitmap() -> impl IntoView {
     let duration = 3000.0;
     let mut start_time = 0.0;
-    let mut i = 0.0;
+    let mut i = 0;
 
     let canvas_ref = create_node_ref::<Canvas>();
     let window = web_sys::window().unwrap();
     let window_clone = window.clone();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
-    // let mut bmp = ImageData::new_with_sw(1, 1).expect("tmp placeholder created");
     let mut data: Vec<u8> = Vec::new();
 
-    let mut setup = false;
-
     *draw.borrow_mut() = Closure::new(move |timestamp| {
-        if i == 0.0 {
+        if i == 0 {
             start_time = timestamp;
         }
-        i += 1.0;
+        i += 1;
 
         let canvas = canvas_ref.get_untracked().expect("canvas should exist");
 
@@ -168,10 +185,20 @@ fn CanvasBitmap() -> impl IntoView {
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .unwrap();
 
-        if !setup {
-            setup = true;
-            data = vec![255; canvas_w as usize * canvas_h as usize * 4];
+        if data.is_empty() {
+            data = vec![0; canvas_w as usize * canvas_h as usize * 4];
         }
+
+        data.iter_mut().for_each(|p| *p = 0);
+        let x = i as usize;
+        draw_rect(
+            &mut data,
+            canvas_w as usize,
+            x,
+            0,
+            x + 20,
+            canvas_h as usize,
+        );
 
         let clamped = Clamped(&data[..]);
         let image =
@@ -181,12 +208,13 @@ fn CanvasBitmap() -> impl IntoView {
 
         let delta = timestamp - start_time;
         if delta < duration {
-            let fps = i / delta * 1000.0;
+            let fps = i as f64 / delta * 1000.0;
             logging::log!("Iter: {i}\n  Time: {delta}\n  FPS: {fps}");
             let _ =
                 window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
         } else {
-            i = 0.0;
+            i = 0;
+            data.clear();
         }
     });
 
