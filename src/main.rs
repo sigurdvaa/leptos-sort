@@ -24,7 +24,7 @@ fn App() -> impl IntoView {
 
 #[component]
 fn CanvasDraw() -> impl IntoView {
-    let duration = 3000.0;
+    let duration = 5000.0;
     let mut start_time = 0.0;
     let mut i = 0.0;
 
@@ -33,19 +33,23 @@ fn CanvasDraw() -> impl IntoView {
     let window_clone = window.clone();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
+    let perf = window.performance().unwrap();
+    let mut total_frame_time = 0.0;
 
-    let mut setup = false;
+    // let mut setup = false;
 
-    *draw.borrow_mut() = Closure::new(move |timestamp| {
+    *draw.borrow_mut() = Closure::new(move |prev_end_time| {
+        let frame_start = perf.now();
+
         if i == 0.0 {
-            start_time = timestamp;
+            start_time = prev_end_time;
         }
         i += 1.0;
 
         let canvas = canvas_ref.get_untracked().expect("canvas should exist");
 
-        // canvas.set_width(600);
-        // canvas.set_height(600);
+        canvas.set_width(1600);
+        canvas.set_height(800);
 
         let canvas_w = canvas.width() as f64;
         let canvas_h = canvas.height() as f64;
@@ -56,61 +60,31 @@ fn CanvasDraw() -> impl IntoView {
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .unwrap();
 
-        if !setup {
-            // Set color
-            context.set_stroke_style(&JsValue::from("white"));
-            context.set_fill_style(&JsValue::from("white"));
-            context.set_font("26px sans-serif");
-            setup = true;
-        }
+        // if !setup {
+        // Set color
+        // context.set_stroke_style(&JsValue::from("white"));
+        context.set_fill_style(&JsValue::from("white"));
+        // context.set_font("26px sans-serif");
+        // setup = true;
+        // }
 
-        // Clear
         context.clear_rect(0.0, 0.0, canvas_w, canvas_h);
-
-        // Write text
-        let _ = context.fill_text(&format!("Frame: {i}"), 0.0, 150.0);
-
         context.begin_path();
-
-        // Draw the outer circle.
-        context
-            .arc(75.0, 75.0, 50.0, 0.0, std::f64::consts::PI * 2.0)
-            .unwrap();
-
-        // Draw the mouth.
-        context.move_to(110.0, 75.0);
-        context
-            .arc(75.0, 75.0, 35.0, 0.0, std::f64::consts::PI)
-            .unwrap();
-
-        // Draw the left eye.
-        context.move_to(65.0, 65.0);
-        context
-            .arc(60.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
-            .unwrap();
-
-        // Draw the right eye.
-        context.move_to(95.0, 65.0);
-        context
-            .arc(90.0, 65.0, 5.0, 0.0, std::f64::consts::PI * 2.0)
-            .unwrap();
-
+        context.rect(i, 0.0, 50.0, canvas_h);
         context.close_path();
+        context.fill();
 
-        context.stroke();
-
-        let delta = timestamp - start_time;
+        let delta = prev_end_time - start_time;
         if delta < duration {
             let fps = i / delta * 1000.0;
-            logging::log!("Iter: {i}\n  Time: {delta}\n  FPS: {fps}");
+            let frame_delta = perf.now() - frame_start;
+            total_frame_time += frame_delta;
+            logging::log!("Iter: {i}\n  Time: {delta}\n  FPS: {fps}\n  Frame delta: {frame_delta}");
             let _ =
                 window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
         } else {
+            logging::log!("avg. frame time: {}", total_frame_time / i);
             i = 0.0;
-            let bmp = context
-                .get_image_data(0.0, 0.0, canvas_w, canvas_h)
-                .unwrap();
-            logging::log!("{:?}", bmp.data());
         }
     });
 
@@ -154,7 +128,7 @@ fn draw_rect(
 
 #[component]
 fn CanvasBitmap() -> impl IntoView {
-    let duration = 3000.0;
+    let duration = 5000.0;
     let mut start_time = 0.0;
     let mut i = 0;
 
@@ -163,9 +137,12 @@ fn CanvasBitmap() -> impl IntoView {
     let window_clone = window.clone();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
-    let mut data: Vec<u8> = Vec::new();
+    let perf = window.performance().unwrap();
+    let mut total_frame_time = 0.0;
 
     *draw.borrow_mut() = Closure::new(move |timestamp| {
+        let frame_start = perf.now();
+
         if i == 0 {
             start_time = timestamp;
         }
@@ -173,8 +150,8 @@ fn CanvasBitmap() -> impl IntoView {
 
         let canvas = canvas_ref.get_untracked().expect("canvas should exist");
 
-        // canvas.set_width(600);
-        // canvas.set_height(600);
+        canvas.set_width(1600);
+        canvas.set_height(800);
 
         let canvas_w = canvas.width() as f64;
         let canvas_h = canvas.height() as f64;
@@ -185,18 +162,14 @@ fn CanvasBitmap() -> impl IntoView {
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .unwrap();
 
-        if data.is_empty() {
-            data = vec![0; canvas_w as usize * canvas_h as usize * 4];
-        }
-
-        data.iter_mut().for_each(|p| *p = 0);
+        let mut data = vec![0; canvas_w as usize * canvas_h as usize * 4];
         let x = i as usize;
         draw_rect(
             &mut data,
             canvas_w as usize,
             x,
             0,
-            x + 20,
+            x + 50,
             canvas_h as usize,
         );
 
@@ -209,10 +182,13 @@ fn CanvasBitmap() -> impl IntoView {
         let delta = timestamp - start_time;
         if delta < duration {
             let fps = i as f64 / delta * 1000.0;
-            logging::log!("Iter: {i}\n  Time: {delta}\n  FPS: {fps}");
+            let frame_delta = perf.now() - frame_start;
+            total_frame_time += frame_delta;
+            logging::log!("Iter: {i}\n  Time: {delta}\n  FPS: {fps}\n  frame delta: {frame_delta}");
             let _ =
                 window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
         } else {
+            logging::log!("avg. frame time: {}", total_frame_time / i as f64);
             i = 0;
             data.clear();
         }
