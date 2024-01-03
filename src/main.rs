@@ -21,6 +21,44 @@ fn App() -> impl IntoView {
     }
 }
 
+fn bubblesort(list: &mut [usize]) {
+    for i in 0..list.len() {
+        for j in 0..list.len() - i - 1 {
+            if list[j] > list[j + 1] {
+                list.swap(j, j + 1);
+            }
+        }
+    }
+}
+
+fn quicksort_pivot(list: &mut [usize], lo: usize, hi: usize) -> usize {
+    let mut idx: usize = lo;
+
+    for i in lo..hi {
+        if list[i] <= list[hi] {
+            list.swap(i, idx);
+            idx += 1;
+        }
+    }
+
+    if idx >= list.len() {
+        idx -= 1;
+    }
+
+    list.swap(hi, idx);
+    idx
+}
+
+fn quicksort(list: &mut [usize], lo: usize, hi: usize) {
+    if lo >= hi {
+        return;
+    }
+
+    let pivot = quicksort_pivot(list, lo, hi);
+    quicksort(list, lo, pivot - 1);
+    quicksort(list, pivot + 1, hi);
+}
+
 #[component]
 fn Canvas() -> impl IntoView {
     let duration = 3000.0;
