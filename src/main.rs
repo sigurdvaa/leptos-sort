@@ -1,4 +1,4 @@
-use leptos::html::{Button, Canvas};
+use leptos::html::{Audio, Button, Canvas};
 use leptos::*;
 use rand::prelude::SliceRandom;
 use std::cell::RefCell;
@@ -66,53 +66,64 @@ struct Bubble {
     y: usize,
     data: Vec<usize>,
     done: bool,
+    audio: Option<HtmlElement<Audio>>,
+    ctx2d: Option<CanvasRenderingContext2d>,
 }
 
 impl Bubble {
     fn new() -> Self {
         let mut rng = rand::thread_rng();
-        let mut nums: Vec<usize> = (1..=10).collect();
+        let mut nums: Vec<usize> = (1..=20).collect();
         nums.shuffle(&mut rng);
         Self {
             x: 0,
             y: 0,
             data: nums,
             done: false,
+            audio: None,
+            ctx2d: None,
         }
     }
 
-    fn draw(&mut self, ctx: CanvasRenderingContext2d, canvas_w: f64, canvas_h: f64, ticks: usize) {
+    fn draw(&mut self, canvas_w: f64, canvas_h: f64, ticks: usize) {
         for _ in 0..ticks {
             self.update();
         }
 
-        ctx.clear_rect(0.0, 0.0, canvas_w, canvas_h);
-        ctx.set_fill_style(&JsValue::from("white"));
+        if let Some(ctx) = &self.ctx2d {
+            ctx.clear_rect(0.0, 0.0, canvas_w, canvas_h);
+            ctx.set_fill_style(&JsValue::from("red"));
 
-        let spacing = 2.0;
-        let width = (canvas_h - (spacing * self.data.len() as f64)) / self.data.len() as f64;
+            let spacing = 2.0;
+            let width = (canvas_w - (spacing * self.data.len() as f64)) / self.data.len() as f64;
 
-        // draw each item
-        for (i, num) in self.data.iter().enumerate() {
-            let height = *num as f64 * (canvas_h / 10.0);
-            let x = i as f64 * (spacing + width);
-            ctx.begin_path();
-            ctx.rect(x, 0.0, width, height);
-            ctx.close_path();
-            ctx.fill();
+            // draw each item
+            for (i, num) in self.data.iter().enumerate() {
+                let height = *num as f64 * (canvas_h / self.data.len() as f64);
+                let x = i as f64 * (spacing + width);
+                ctx.begin_path();
+                ctx.rect(x + (spacing / 2.0), canvas_h - height, width, height);
+                ctx.close_path();
+                ctx.fill();
+            }
         }
     }
 
     fn update(&mut self) {
         for x in self.x..self.data.len() {
-            logging::log!("x: {x}");
             self.x = x;
             for y in self.y..self.data.len() - x - 1 {
-                logging::log!("y: {y}");
                 self.y = y;
                 if self.data[y] > self.data[y + 1] {
                     self.data.swap(y, y + 1);
                     return;
+                }
+            }
+            self.y = 0;
+            if let Some(audio) = &self.audio {
+                audio.set_current_time(0.005);
+                if audio.paused() {
+                    let _ = audio.play();
                 }
             }
         }
@@ -151,37 +162,45 @@ fn quicksort(list: &mut [usize], lo: usize, hi: usize) {
 #[component]
 fn Canvas() -> impl IntoView {
     let mut bubble = Bubble::new();
+    let mut prev_update = 0.0;
+
     let canvas_w = 600.0;
     let canvas_h = 350.0;
     let canvas_ref = create_node_ref::<Canvas>();
     let btn_ref = create_node_ref::<Button>();
+    let audio_ref = create_node_ref::<Audio>();
     let window = web_sys::window().unwrap();
     let window_clone = window.clone();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
     let document = leptos::document();
-    let mut prev_update = 0.0;
 
     *draw.borrow_mut() = Closure::new(move |prev_end_time| {
         if prev_update == 0.0 {
             prev_update = prev_end_time;
         }
 
-        let canvas = canvas_ref.get_untracked().expect("canvas should exist");
+        if bubble.audio.is_none() {
+            bubble.audio = Some(audio_ref.get_untracked().expect("audio should exist"));
+        }
 
-        let ctx = canvas
-            .get_context("2d")
-            .unwrap()
-            .unwrap()
-            .dyn_into::<CanvasRenderingContext2d>()
-            .unwrap();
+        if bubble.ctx2d.is_none() {
+            let canvas = canvas_ref.get_untracked().expect("canvas should exist");
+            bubble.ctx2d = Some(
+                canvas
+                    .get_context("2d")
+                    .unwrap()
+                    .unwrap()
+                    .dyn_into::<CanvasRenderingContext2d>()
+                    .unwrap(),
+            );
+        }
 
         let now = document.timeline().current_time().unwrap();
         let delta = now - prev_update;
-        let ticks = delta as usize / 1000;
+        let ticks = delta as usize / 50;
         if ticks > 0 {
-            logging::log!("Ticks: {ticks}");
-            bubble.draw(ctx, canvas_w, canvas_h, ticks);
+            bubble.draw(canvas_w, canvas_h, ticks);
             prev_update = now;
         }
 
@@ -213,7 +232,12 @@ fn Canvas() -> impl IntoView {
                 </button>
             </div>
             <div class="d-flex justify-content-center mb-3">
-                <canvas class="border border-primary" width=canvas_w height=canvas_h
+                <audio src="/audio/click.wav"
+                    // type="audio/webm"
+                    _ref=audio_ref />
+                <canvas
+                    class="border border-danger border-4"
+                    width=canvas_w height=canvas_h
                 ref=canvas_ref />
             </div>
         </div>

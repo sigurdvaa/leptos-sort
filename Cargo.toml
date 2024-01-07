@@ -18,7 +18,6 @@ web-sys = { version = "0.3.66", features = [
   'Element',
   'HtmlCanvasElement',
   'Window',
-  'Performance',
-  'ImageData',
+  'HtmlMediaElement',
 ] }
 rand = "0.8.5"
