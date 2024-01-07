@@ -3,8 +3,10 @@ use leptos::*;
 use rand::prelude::SliceRandom;
 use std::cell::RefCell;
 use std::rc::Rc;
+use wasm_bindgen::prelude::*;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::CanvasRenderingContext2d;
+use web_sys::{AudioContext, OscillatorType};
+use web_sys::{CanvasRenderingContext2d, OscillatorNode};
 
 type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
 
@@ -66,7 +68,6 @@ struct Bubble {
     y: usize,
     data: Vec<usize>,
     done: bool,
-    audio: Option<HtmlElement<Audio>>,
     ctx2d: Option<CanvasRenderingContext2d>,
 }
 
@@ -80,7 +81,6 @@ impl Bubble {
             y: 0,
             data: nums,
             done: false,
-            audio: None,
             ctx2d: None,
         }
     }
@@ -120,12 +120,6 @@ impl Bubble {
                 }
             }
             self.y = 0;
-            if let Some(audio) = &self.audio {
-                audio.set_current_time(0.005);
-                if audio.paused() {
-                    let _ = audio.play();
-                }
-            }
         }
         self.done = true;
     }
@@ -175,13 +169,22 @@ fn Canvas() -> impl IntoView {
     let draw_clone = draw.clone();
     let document = leptos::document();
 
+    let audio_ctx = AudioContext::new().expect("to create audio context");
+    let audio = audio_ctx.create_oscillator().expect("to create oscillator");
+    let gain = audio_ctx.create_gain().expect("to create gain");
+    gain.gain().set_value(0.0);
+    audio
+        .connect_with_audio_node(&gain)
+        .expect("audio connect gain");
+    gain.connect_with_audio_node(&audio_ctx.destination())
+        .expect("gain connect destination");
+    audio.frequency().set_value(440.0);
+
     *draw.borrow_mut() = Closure::new(move |prev_end_time| {
+        let _ = audio.start();
+
         if prev_update == 0.0 {
             prev_update = prev_end_time;
-        }
-
-        if bubble.audio.is_none() {
-            bubble.audio = Some(audio_ref.get_untracked().expect("audio should exist"));
         }
 
         if bubble.ctx2d.is_none() {
@@ -200,6 +203,7 @@ fn Canvas() -> impl IntoView {
         let delta = now - prev_update;
         let ticks = delta as usize / 50;
         if ticks > 0 {
+            gain.gain().set_value(1.0);
             bubble.draw(canvas_w, canvas_h, ticks);
             prev_update = now;
         }
@@ -207,7 +211,9 @@ fn Canvas() -> impl IntoView {
         if !bubble.done {
             let _ =
                 window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
+            // gain.gain().set_value(0.0);
         } else {
+            gain.gain().set_value(0.0);
             bubble = Bubble::new();
             btn_ref
                 .get_untracked()

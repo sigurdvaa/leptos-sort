@@ -19,5 +19,12 @@ web-sys = { version = "0.3.66", features = [
   'HtmlCanvasElement',
   'Window',
   'HtmlMediaElement',
-] }
+  'OscillatorNode',
+  'OscillatorType',
+  'AudioContext',
+  'AudioNode',
+  'AudioDestinationNode',
+  'AudioParam',
+  'GainNode',
+]}
 rand = "0.8.5"
