@@ -1,8 +1,10 @@
 use leptos::html::{Button, Canvas};
 use leptos::*;
+use rand::prelude::SliceRandom;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
+use web_sys::CanvasRenderingContext2d;
 
 type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
 
@@ -59,13 +61,62 @@ fn Sidebar() -> impl IntoView {
     }
 }
 
-fn bubblesort(list: &mut [usize]) {
-    for i in 0..list.len() {
-        for j in 0..list.len() - i - 1 {
-            if list[j] > list[j + 1] {
-                list.swap(j, j + 1);
+struct Bubble {
+    x: usize,
+    y: usize,
+    data: Vec<usize>,
+    done: bool,
+}
+
+impl Bubble {
+    fn new() -> Self {
+        let mut rng = rand::thread_rng();
+        let mut nums: Vec<usize> = (1..=10).collect();
+        nums.shuffle(&mut rng);
+        Self {
+            x: 0,
+            y: 0,
+            data: nums,
+            done: false,
+        }
+    }
+
+    fn draw(&mut self, ctx: CanvasRenderingContext2d, canvas_w: f64, canvas_h: f64, ticks: usize) {
+        for _ in 0..ticks {
+            self.update();
+        }
+
+        ctx.clear_rect(0.0, 0.0, canvas_w, canvas_h);
+        ctx.set_fill_style(&JsValue::from("white"));
+
+        let spacing = 2.0;
+        let width = (canvas_h - (spacing * self.data.len() as f64)) / self.data.len() as f64;
+
+        // draw each item
+        for (i, num) in self.data.iter().enumerate() {
+            let height = *num as f64 * (canvas_h / 10.0);
+            let x = i as f64 * (spacing + width);
+            ctx.begin_path();
+            ctx.rect(x, 0.0, width, height);
+            ctx.close_path();
+            ctx.fill();
+        }
+    }
+
+    fn update(&mut self) {
+        for x in self.x..self.data.len() {
+            logging::log!("x: {x}");
+            self.x = x;
+            for y in self.y..self.data.len() - x - 1 {
+                logging::log!("y: {y}");
+                self.y = y;
+                if self.data[y] > self.data[y + 1] {
+                    self.data.swap(y, y + 1);
+                    return;
+                }
             }
         }
+        self.done = true;
     }
 }
 
@@ -99,10 +150,7 @@ fn quicksort(list: &mut [usize], lo: usize, hi: usize) {
 
 #[component]
 fn Canvas() -> impl IntoView {
-    let duration = 2000.0;
-    let mut start_time = 0.0;
-    let mut i = 0.0;
-
+    let mut bubble = Bubble::new();
     let canvas_w = 600.0;
     let canvas_h = 350.0;
     let canvas_ref = create_node_ref::<Canvas>();
@@ -111,35 +159,37 @@ fn Canvas() -> impl IntoView {
     let window_clone = window.clone();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
+    let document = leptos::document();
+    let mut prev_update = 0.0;
 
     *draw.borrow_mut() = Closure::new(move |prev_end_time| {
-        if i == 0.0 {
-            start_time = prev_end_time;
+        if prev_update == 0.0 {
+            prev_update = prev_end_time;
         }
-        i += 1.0;
 
         let canvas = canvas_ref.get_untracked().expect("canvas should exist");
 
-        let context = canvas
+        let ctx = canvas
             .get_context("2d")
             .unwrap()
             .unwrap()
-            .dyn_into::<web_sys::CanvasRenderingContext2d>()
+            .dyn_into::<CanvasRenderingContext2d>()
             .unwrap();
 
-        context.clear_rect(0.0, 0.0, canvas_w, canvas_h);
-        context.set_fill_style(&JsValue::from("white"));
-        context.begin_path();
-        context.rect(i * 4.0, 0.0, 100.0, canvas_h);
-        context.close_path();
-        context.fill();
+        let now = document.timeline().current_time().unwrap();
+        let delta = now - prev_update;
+        let ticks = delta as usize / 1000;
+        if ticks > 0 {
+            logging::log!("Ticks: {ticks}");
+            bubble.draw(ctx, canvas_w, canvas_h, ticks);
+            prev_update = now;
+        }
 
-        let delta = prev_end_time - start_time;
-        if delta < duration {
+        if !bubble.done {
             let _ =
                 window_clone.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
         } else {
-            i = 0.0;
+            bubble = Bubble::new();
             btn_ref
                 .get_untracked()
                 .expect("btn should exist")
