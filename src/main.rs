@@ -62,19 +62,14 @@ fn Sidebar() -> impl IntoView {
     }
 }
 
-struct Audio {
-    ctx: AudioContext,
-    osc: OscillatorNode,
-    gain: GainNode,
-}
-
 struct Bubble {
     x: usize,
     y: usize,
     data: Vec<usize>,
     done: bool,
     ctx2d: CanvasRenderingContext2d,
-    audio: Audio,
+    osc: OscillatorNode,
+    gain: GainNode,
 }
 
 impl Bubble {
@@ -109,16 +104,13 @@ impl Bubble {
             data: nums,
             done: false,
             ctx2d,
-            audio: Audio {
-                ctx: audio_ctx,
-                osc: audio_osc,
-                gain: audio_gain,
-            },
+            osc: audio_osc,
+            gain: audio_gain,
         }
     }
 
     fn draw(&mut self, canvas_w: f64, canvas_h: f64, ticks: usize) {
-        self.audio.gain.gain().set_value(0.1);
+        self.gain.gain().set_value(0.1);
 
         for _ in 0..ticks {
             self.update();
@@ -149,8 +141,7 @@ impl Bubble {
                 self.y = y;
                 if self.data[y] > self.data[y + 1] {
                     self.data.swap(y, y + 1);
-                    self.audio
-                        .osc
+                    self.osc
                         .frequency()
                         .set_value(((500 / self.data.len()) * self.data[y + 1] + 150) as f32);
                     return;
@@ -229,7 +220,7 @@ fn Canvas() -> impl IntoView {
                 let _ = window_clone
                     .request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
             } else {
-                let _ = bubble.audio.osc.stop();
+                let _ = bubble.osc.stop();
                 bubble_holder = Some(Bubble::new(&canvas_ref));
                 btn_ref
                     .get_untracked()
