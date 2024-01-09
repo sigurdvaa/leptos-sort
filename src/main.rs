@@ -1,5 +1,6 @@
 use leptos::html::{Button, Canvas};
 use leptos::*;
+use leptos_router::*;
 use rand::prelude::SliceRandom;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -19,15 +20,32 @@ fn main() {
 #[component]
 fn App() -> impl IntoView {
     view! {
-        <div class="d-flex flex-row">
-            <Sidebar/>
-            <Canvas/>
-        </div>
+        <Router>
+            <div class="d-flex flex-row">
+                <Sidebar/>
+                <Routes>
+                    <Route
+                        path="/"
+                        view=move || view! { <p>Home</p> }
+                    />
+                    <Route
+                        path="/bubblesort"
+                        view=move || view! { <Canvas/> }
+                    />
+                    <Route
+                        path="/*"
+                        view=move || view! { <p>Not found</p> }
+                    />
+                </Routes>
+            </div>
+        </Router>
     }
 }
 
 #[component]
 fn Sidebar() -> impl IntoView {
+    let location = use_location();
+
     view! {
         <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark" style="width: 280px;">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
@@ -37,23 +55,34 @@ fn Sidebar() -> impl IntoView {
             <hr/>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="#" class="nav-link active" aria-current="page">
+                    <a href="/" class="nav-link text-danger"
+                        class:bg-black=move || location.pathname.get() == "/"
+                    >
                         <i class="bi bi-house me-2"></i>
                         Home
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
-                        Sort1
+                    <a href="/bubblesort" class="nav-link text-danger"
+                        class:bg-black=move || location.pathname.get() == "/bubblesort"
+                    >
+                        <i class="bi bi-chat me-2"></i>
+                        Bubble Sort
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="/sort2" class="nav-link text-danger"
+                        class:bg-black=move || location.pathname.get() == "/sort2"
+                    >
+                        <i class="bi bi-question-lg me-2"></i>
                         Sort2
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="/sort3" class="nav-link text-danger"
+                        class:bg-black=move || location.pathname.get() == "/sort3"
+                    >
+                        <i class="bi bi-question-lg me-2"></i>
                         Sort3
                     </a>
                 </li>
@@ -241,7 +270,7 @@ fn Canvas() -> impl IntoView {
     view! {
         <div class="container-fluid my-3">
             <div class="d-flex justify-content-center mb-3">
-                <button class="col-2 btn btn-primary" _ref=btn_ref on:click=draw_to_canvas>
+                <button class="col-2 btn btn-outline-danger" _ref=btn_ref on:click=draw_to_canvas>
                     Run Bubble Sort
                 </button>
             </div>
