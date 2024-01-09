@@ -21,12 +21,12 @@ fn main() {
 fn App() -> impl IntoView {
     view! {
         <Router>
-            <div class="d-flex flex-row">
+            <div class="d-flex flex-row vh-100">
                 <Sidebar/>
                 <Routes>
                     <Route
                         path="/"
-                        view=move || view! { <p>Home</p> }
+                        view=|| view! { <Home/> }
                     />
                     <Route
                         path="/bubblesort"
@@ -47,8 +47,8 @@ fn Sidebar() -> impl IntoView {
     let location = use_location();
 
     view! {
-        <div class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark" style="width: 280px;">
-            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 260px;">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
                 <i class="bi bi-filter fs-3 me-2 text-danger"></i>
                 <span class="fs-4 text-danger">Sort</span>
             </a>
@@ -87,6 +87,21 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
             </ul>
+            <hr/>
+                <div class="text-secondary ps-3">
+                    <div>Sigtown <i class="bi bi-c-circle mx-2"></i> 2024</div>
+                    <a target="_blank" href="https://opensource.org/license/mit/" class="link link-secondary me-1">MIT Licensed</a>
+                </div>
+        </div>
+    }
+}
+
+#[component]
+fn Home() -> impl IntoView {
+    view! {
+        <div class="container-fluid my-3 text-center">
+            <h3>Visual Sorting</h3>
+            <p>Sorting algorithms visualized using Rust, Leptos, HTML Canvas, and Bootstrap</p>
         </div>
     }
 }
