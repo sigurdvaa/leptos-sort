@@ -19,6 +19,10 @@ fn main() {
 
 #[component]
 fn App() -> impl IntoView {
+    let update_ms = create_rw_signal(25);
+    let play = create_rw_signal(true);
+    let items = create_rw_signal(30);
+    let volume = create_rw_signal(0.1);
     view! {
         <Router>
             <div class="d-flex flex-row vh-100">
@@ -30,7 +34,7 @@ fn App() -> impl IntoView {
                     />
                     <Route
                         path="/bubblesort"
-                        view=move || view! { <Canvas/> }
+                        view=move || view! { <BubbleSort play update_ms items volume/> }
                     />
                     <Route
                         path="/*"
@@ -114,12 +118,13 @@ struct Bubble {
     ctx2d: CanvasRenderingContext2d,
     osc: OscillatorNode,
     gain: GainNode,
+    volume: RwSignal<f32>,
 }
 
 impl Bubble {
-    fn new(canvas_ref: &NodeRef<Canvas>) -> Self {
+    fn new(canvas_ref: &NodeRef<Canvas>, items: usize, volume: RwSignal<f32>) -> Self {
         let mut rng = rand::thread_rng();
-        let mut nums: Vec<usize> = (1..=30).collect();
+        let mut nums: Vec<usize> = (1..=items).collect();
         nums.shuffle(&mut rng);
 
         let canvas = canvas_ref.get_untracked().expect("canvas should exist");
@@ -150,11 +155,12 @@ impl Bubble {
             ctx2d,
             osc: audio_osc,
             gain: audio_gain,
+            volume,
         }
     }
 
     fn draw(&mut self, canvas_w: f64, canvas_h: f64, ticks: usize) {
-        self.gain.gain().set_value(0.1);
+        self.gain.gain().set_value(self.volume.get_untracked());
 
         for _ in 0..ticks {
             self.update();
@@ -228,7 +234,12 @@ fn quicksort(list: &mut [usize], lo: usize, hi: usize) {
 }
 
 #[component]
-fn Canvas() -> impl IntoView {
+fn BubbleSort(
+    play: RwSignal<bool>,
+    update_ms: RwSignal<usize>,
+    items: RwSignal<usize>,
+    volume: RwSignal<f32>,
+) -> impl IntoView {
     let mut bubble_holder: Option<Bubble> = None;
     let mut prev_update = 0.0;
 
@@ -248,24 +259,25 @@ fn Canvas() -> impl IntoView {
         }
 
         if bubble_holder.is_none() {
-            bubble_holder = Some(Bubble::new(&canvas_ref));
+            bubble_holder = Some(Bubble::new(&canvas_ref, items.get_untracked(), volume));
         }
 
         if let Some(bubble) = bubble_holder.as_mut() {
             let now = document.timeline().current_time().unwrap();
             let delta = now - prev_update;
-            let ticks = delta as usize / 25;
+            let ticks = delta as usize / update_ms.get_untracked();
             if ticks > 0 {
                 bubble.draw(canvas_w, canvas_h, ticks);
                 prev_update = now;
             }
 
-            if !bubble.done {
+            if !bubble.done && play.get_untracked() {
                 let _ = window_clone
                     .request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
             } else {
                 let _ = bubble.osc.stop();
-                bubble_holder = Some(Bubble::new(&canvas_ref));
+                bubble_holder = None;
+                prev_update = 0.0;
                 btn_ref
                     .get_untracked()
                     .expect("btn should exist")
@@ -279,15 +291,29 @@ fn Canvas() -> impl IntoView {
             .get_untracked()
             .expect("btn should exist")
             .set_disabled(true);
+        play.set(true);
         let _ = window.request_animation_frame(draw.borrow().as_ref().unchecked_ref());
     };
 
     view! {
         <div class="container-fluid my-3">
             <div class="d-flex justify-content-center mb-3">
-                <button class="col-2 btn btn-outline-danger" _ref=btn_ref on:click=draw_to_canvas>
-                    Run Bubble Sort
+                <button class="col-2 btn btn-outline-danger mx-2" _ref=btn_ref on:click=draw_to_canvas>
+                    Run
                 </button>
+                <button class="col-2 btn btn-outline-danger mx-2" on:click=move |_| play.set(false)>
+                    Stop
+                </button>
+                <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
+                    <input type="range" class="form-range mx-3 m-0 p-0" value=items.get_untracked() min="1" max="100" step="1"
+                        on:change=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
+                    <span class="text-muted m-0 p-0">Items {move || items.get()}</span>
+                </div>
+                <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
+                    <input type="range" class="form-range mx-3 m-0 p-0" value=volume.with_untracked(|v| (v*100.0).floor()) min="1" max="60" step="1"
+                        on:change=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
+                    <span class="text-muted m-0 p-0">Volume {move || (volume.get() * 100.0).floor()}%</span>
+                </div>
             </div>
             <div class="d-flex justify-content-center mb-3">
                 <canvas
