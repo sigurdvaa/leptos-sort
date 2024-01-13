@@ -167,7 +167,6 @@ impl Bubble {
         }
 
         self.ctx2d.clear_rect(0.0, 0.0, canvas_w, canvas_h);
-        self.ctx2d.set_fill_style(&JsValue::from("red"));
 
         let spacing = 2.0;
         // how wide can one item be to for all items to fill the canvas, no spacing front or end
@@ -179,6 +178,11 @@ impl Bubble {
             let height = *num as f64 * (canvas_h / self.data.len() as f64);
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
+            if i > 1 && i == self.y + 1 {
+                self.ctx2d.set_fill_style(&JsValue::from("white"));
+            } else {
+                self.ctx2d.set_fill_style(&JsValue::from("red"));
+            }
             self.ctx2d.begin_path();
             self.ctx2d.rect(x, canvas_h - height, width, height);
             self.ctx2d.close_path();
@@ -308,17 +312,17 @@ fn BubbleSort(
                 </button>
                 <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
                     <input type="range" class="form-range mx-3 m-0 p-0" value=items.get_untracked() min="1" max="100" step="1"
-                        on:change=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
+                        on:input=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
                     <span class="text-muted m-0 p-0">Items {move || items.get()}</span>
                 </div>
                 <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
                     <input type="range" class="form-range mx-3 m-0 p-0" value=volume.with_untracked(|v| (v*100.0).floor()) min="1" max="60" step="1"
-                        on:change=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
+                        on:input=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
                     <span class="text-muted m-0 p-0">Volume {move || (volume.get() * 100.0).floor()}%</span>
                 </div>
                 <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
-                    <input type="range" class="form-range mx-3 m-0 p-0" value=update_ms.get() min="1" max="1000" step="1"
-                        on:change=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
+                    <input type="range" class="form-range mx-3 m-0 p-0" value=update_ms.get() min="1" max="250" step="1"
+                        on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
                     <span class="text-muted m-0 p-0">Update/ms {move || update_ms.get()}</span>
                 </div>
             </div>
