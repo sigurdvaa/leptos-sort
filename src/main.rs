@@ -170,15 +170,17 @@ impl Bubble {
         self.ctx2d.set_fill_style(&JsValue::from("red"));
 
         let spacing = 2.0;
-        let width = (canvas_w - (spacing * self.data.len() as f64)) / self.data.len() as f64;
+        // how wide can one item be to for all items to fill the canvas, no spacing front or end
+        let width =
+            (canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
 
         // draw each item
         for (i, num) in self.data.iter().enumerate() {
             let height = *num as f64 * (canvas_h / self.data.len() as f64);
-            let x = i as f64 * (spacing + width);
+            // draw item inside canvas, with width and spacing, no spacing front or end
+            let x = i as f64 * (width + spacing);
             self.ctx2d.begin_path();
-            self.ctx2d
-                .rect(x + (spacing / 2.0), canvas_h - height, width, height);
+            self.ctx2d.rect(x, canvas_h - height, width, height);
             self.ctx2d.close_path();
             self.ctx2d.fill();
         }
@@ -314,12 +316,14 @@ fn BubbleSort(
                         on:change=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
                     <span class="text-muted m-0 p-0">Volume {move || (volume.get() * 100.0).floor()}%</span>
                 </div>
+                <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
+                    <input type="range" class="form-range mx-3 m-0 p-0" value=update_ms.get() min="1" max="1000" step="1"
+                        on:change=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
+                    <span class="text-muted m-0 p-0">Update/ms {move || update_ms.get()}</span>
+                </div>
             </div>
             <div class="d-flex justify-content-center mb-3">
-                <canvas
-                    class="border border-danger border-4"
-                    width=canvas_w height=canvas_h
-                ref=canvas_ref />
+                <canvas width=canvas_w height=canvas_h class="border border-2 rounded border-danger p-1" _ref=canvas_ref />
             </div>
         </div>
     }
