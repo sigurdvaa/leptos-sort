@@ -1,4 +1,4 @@
-use leptos::html::{Button, Canvas};
+use leptos::html::Canvas;
 use leptos::*;
 use leptos_router::*;
 use rand::prelude::SliceRandom;
@@ -20,7 +20,7 @@ fn main() {
 #[component]
 fn App() -> impl IntoView {
     let update_ms = create_rw_signal(25);
-    let play = create_rw_signal(true);
+    let play = create_rw_signal(false);
     let items = create_rw_signal(30);
     let volume = create_rw_signal(0.1);
     view! {
@@ -59,32 +59,32 @@ fn Sidebar() -> impl IntoView {
             <hr/>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="/" class="nav-link text-danger"
-                        class:bg-black=move || location.pathname.get() == "/"
+                    <a href="/" class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == "/"
                     >
                         <i class="bi bi-house me-2"></i>
                         Home
                     </a>
                 </li>
                 <li>
-                    <a href="/bubblesort" class="nav-link text-danger"
-                        class:bg-black=move || location.pathname.get() == "/bubblesort"
+                    <a href="/bubblesort" class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == "/bubblesort"
                     >
                         <i class="bi bi-chat me-2"></i>
                         Bubble Sort
                     </a>
                 </li>
                 <li>
-                    <a href="/sort2" class="nav-link text-danger"
-                        class:bg-black=move || location.pathname.get() == "/sort2"
+                    <a href="/sort2" class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == "/sort2"
                     >
                         <i class="bi bi-question-lg me-2"></i>
                         Sort2
                     </a>
                 </li>
                 <li>
-                    <a href="/sort3" class="nav-link text-danger"
-                        class:bg-black=move || location.pathname.get() == "/sort3"
+                    <a href="/sort3" class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == "/sort3"
                     >
                         <i class="bi bi-question-lg me-2"></i>
                         Sort3
@@ -252,7 +252,6 @@ fn BubbleSort(
     let canvas_w = 600.0;
     let canvas_h = 350.0;
     let canvas_ref = create_node_ref::<Canvas>();
-    let btn_ref = create_node_ref::<Button>();
     let window = web_sys::window().unwrap();
     let window_clone = window.clone();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
@@ -284,19 +283,12 @@ fn BubbleSort(
                 let _ = bubble.osc.stop();
                 bubble_holder = None;
                 prev_update = 0.0;
-                btn_ref
-                    .get_untracked()
-                    .expect("btn should exist")
-                    .set_disabled(false);
+                play.set(false);
             }
         }
     });
 
     let draw_to_canvas = move |_| {
-        btn_ref
-            .get_untracked()
-            .expect("btn should exist")
-            .set_disabled(true);
         play.set(true);
         let _ = window.request_animation_frame(draw.borrow().as_ref().unchecked_ref());
     };
@@ -304,27 +296,34 @@ fn BubbleSort(
     view! {
         <div class="container-fluid my-3">
             <div class="d-flex justify-content-center mb-3">
-                <button class="col-2 btn btn-outline-danger mx-2" _ref=btn_ref on:click=draw_to_canvas>
-                    Run
+                <button class="col-1 btn btn-outline-danger mx-2"
+                    disabled=move || play.get()
+                    on:click=draw_to_canvas>
+                    <i class="bi bi-play-fill me-2"></i>
+                    Play
                 </button>
-                <button class="col-2 btn btn-outline-danger mx-2" on:click=move |_| play.set(false)>
+                <button class="col-1 btn btn-outline-secondary mx-2"
+                    disabled=move || !play.get()
+                    on:click=move |_| play.set(false)>
+                    <i class="bi bi-stop-fill me-2"></i>
                     Stop
                 </button>
-                <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
-                    <input type="range" class="form-range mx-3 m-0 p-0" value=items.get_untracked() min="1" max="100" step="1"
+                <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
+                    <label class="text-muted me-2">"Items: "{move || items.get()}</label>
+                    <input type="range" class="form-range" value=items.get_untracked() min="1" max="150" step="1"
+                        disabled=move || play.get()
                         on:input=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
-                    <span class="text-muted m-0 p-0">Items {move || items.get()}</span>
-                </div>
-                <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
-                    <input type="range" class="form-range mx-3 m-0 p-0" value=volume.with_untracked(|v| (v*100.0).floor()) min="1" max="60" step="1"
+                </span>
+                <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
+                    <label class="text-muted me-2">"Volume: "{move || (volume.get() * 100.0).floor()}%</label>
+                    <input type="range" class="form-range" value=volume.with_untracked(|v| (v*100.0).floor()) min="1" max="100" step="1"
                         on:input=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
-                    <span class="text-muted m-0 p-0">Volume {move || (volume.get() * 100.0).floor()}%</span>
-                </div>
-                <div class="d-flex flex-column align-items-center border border-danger rounded p-2 mx-2">
-                    <input type="range" class="form-range mx-3 m-0 p-0" value=update_ms.get() min="1" max="250" step="1"
+                </span>
+                <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
+                    <label class="text-muted me-2">"Delay "{move || update_ms.get()}"ms"</label>
+                    <input type="range" class="form-range w-auto" value=update_ms.get() min="1" max="250" step="1"
                         on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
-                    <span class="text-muted m-0 p-0">Update/ms {move || update_ms.get()}</span>
-                </div>
+                </span>
             </div>
             <div class="d-flex justify-content-center mb-3">
                 <canvas width=canvas_w height=canvas_h class="border border-2 rounded border-danger p-1" _ref=canvas_ref />
