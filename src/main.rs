@@ -52,7 +52,7 @@ fn Sidebar() -> impl IntoView {
 
     view! {
         <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 260px;">
-            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
+            <a href="/" class="d-flex align-items-center ms-3 mb-3 mb-md-0 me-md-auto text-decoration-none">
                 <i class="bi bi-filter fs-3 me-2 text-danger"></i>
                 <span class="fs-4 text-danger">Sort</span>
             </a>
@@ -103,7 +103,7 @@ fn Sidebar() -> impl IntoView {
 #[component]
 fn Home() -> impl IntoView {
     view! {
-        <div class="container-fluid my-3 text-center">
+        <div class="container-fluid my-3 text-start p-5">
             <h3>Visual Sorting</h3>
             <p>Sorting algorithms visualized using Rust, Leptos, HTML Canvas, and Bootstrap</p>
         </div>
@@ -115,6 +115,8 @@ struct Bubble {
     y: usize,
     data: Vec<usize>,
     done: bool,
+    canvas_w: f64,
+    canvas_h: f64,
     ctx2d: CanvasRenderingContext2d,
     osc: OscillatorNode,
     gain: GainNode,
@@ -122,7 +124,13 @@ struct Bubble {
 }
 
 impl Bubble {
-    fn new(canvas_ref: &NodeRef<Canvas>, items: usize, volume: RwSignal<f32>) -> Self {
+    fn new(
+        canvas_ref: &NodeRef<Canvas>,
+        items: usize,
+        volume: RwSignal<f32>,
+        canvas_w: f64,
+        canvas_h: f64,
+    ) -> Self {
         let mut rng = rand::thread_rng();
         let mut nums: Vec<usize> = (1..=items).collect();
         nums.shuffle(&mut rng);
@@ -152,6 +160,8 @@ impl Bubble {
             y: 0,
             data: nums,
             done: false,
+            canvas_h,
+            canvas_w,
             ctx2d,
             osc: audio_osc,
             gain: audio_gain,
@@ -159,23 +169,24 @@ impl Bubble {
         }
     }
 
-    fn draw(&mut self, canvas_w: f64, canvas_h: f64, ticks: usize) {
+    fn draw(&mut self, ticks: usize) {
         self.gain.gain().set_value(self.volume.get_untracked());
 
         for _ in 0..ticks {
             self.update();
         }
 
-        self.ctx2d.clear_rect(0.0, 0.0, canvas_w, canvas_h);
+        self.ctx2d
+            .clear_rect(0.0, 0.0, self.canvas_w, self.canvas_h);
 
         let spacing = 2.0;
         // how wide can one item be to for all items to fill the canvas, no spacing front or end
         let width =
-            (canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
+            (self.canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
 
         // draw each item
         for (i, num) in self.data.iter().enumerate() {
-            let height = *num as f64 * (canvas_h / self.data.len() as f64);
+            let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
             if i > 1 && i == self.y + 1 {
@@ -184,7 +195,7 @@ impl Bubble {
                 self.ctx2d.set_fill_style(&JsValue::from("red"));
             }
             self.ctx2d.begin_path();
-            self.ctx2d.rect(x, canvas_h - height, width, height);
+            self.ctx2d.rect(x, self.canvas_h - height, width, height);
             self.ctx2d.close_path();
             self.ctx2d.fill();
         }
@@ -249,8 +260,8 @@ fn BubbleSort(
     let mut bubble_holder: Option<Bubble> = None;
     let mut prev_update = 0.0;
 
-    let canvas_w = 600.0;
-    let canvas_h = 350.0;
+    let canvas_w = 1200.0;
+    let canvas_h = 600.0;
     let canvas_ref = create_node_ref::<Canvas>();
     let window = web_sys::window().unwrap();
     let window_clone = window.clone();
@@ -264,7 +275,13 @@ fn BubbleSort(
         }
 
         if bubble_holder.is_none() {
-            bubble_holder = Some(Bubble::new(&canvas_ref, items.get_untracked(), volume));
+            bubble_holder = Some(Bubble::new(
+                &canvas_ref,
+                items.get_untracked(),
+                volume,
+                canvas_w,
+                canvas_h,
+            ));
         }
 
         if let Some(bubble) = bubble_holder.as_mut() {
@@ -272,7 +289,7 @@ fn BubbleSort(
             let delta = now - prev_update;
             let ticks = delta as usize / update_ms.get_untracked();
             if ticks > 0 {
-                bubble.draw(canvas_w, canvas_h, ticks);
+                bubble.draw(ticks);
                 prev_update = now;
             }
 
@@ -294,8 +311,8 @@ fn BubbleSort(
     };
 
     view! {
-        <div class="container-fluid my-3">
-            <div class="d-flex justify-content-center mb-3">
+        <div class="container-fluid my-3 p-4">
+            <div class="d-flex justify-content-start mb-3">
                 <button class="col-1 btn btn-outline-danger mx-2"
                     disabled=move || play.get()
                     on:click=draw_to_canvas>
@@ -310,7 +327,7 @@ fn BubbleSort(
                 </button>
                 <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
                     <label class="text-muted me-2">"Items: "{move || items.get()}</label>
-                    <input type="range" class="form-range" value=items.get_untracked() min="1" max="150" step="1"
+                    <input type="range" class="form-range" value=items.get_untracked() min="1" max="200" step="1"
                         disabled=move || play.get()
                         on:input=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
                 </span>
@@ -321,12 +338,12 @@ fn BubbleSort(
                 </span>
                 <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
                     <label class="text-muted me-2">"Delay "{move || update_ms.get()}"ms"</label>
-                    <input type="range" class="form-range w-auto" value=update_ms.get() min="1" max="250" step="1"
+                    <input type="range" class="form-range w-auto" value=move || update_ms.get() min="1" max="300" step="1"
                         on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
                 </span>
             </div>
-            <div class="d-flex justify-content-center mb-3">
-                <canvas width=canvas_w height=canvas_h class="border border-2 rounded border-danger p-1" _ref=canvas_ref />
+            <div class="d-flex justify-content-start p-2">
+                <canvas width=canvas_w height=canvas_h class="col-11 border border-2 rounded border-danger" _ref=canvas_ref />
             </div>
         </div>
     }
