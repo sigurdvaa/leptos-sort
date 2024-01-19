@@ -189,10 +189,10 @@ impl Bubble {
             let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
-            if i > 1 && i == self.y + 1 {
-                self.ctx2d.set_fill_style(&JsValue::from("white"));
+            if self.x < self.data.len() - 1 && i == self.y + 1 {
+                self.ctx2d.set_fill_style(&JsValue::from("#198754")); // bootstrap green
             } else {
-                self.ctx2d.set_fill_style(&JsValue::from("red"));
+                self.ctx2d.set_fill_style(&JsValue::from("#dc3545")); // bootstrap red
             }
             self.ctx2d.begin_path();
             self.ctx2d.rect(x, self.canvas_h - height, width, height);
@@ -319,13 +319,17 @@ fn BubbleSort(
                     <i class="bi bi-play-fill me-2"></i>
                     Play
                 </button>
-                <button class="col-1 btn btn-outline-secondary mx-2"
+                <button class="col-1 btn mx-2"
                     disabled=move || !play.get()
+                    class:btn-outline-warning=move || play.get()
+                    class:btn-outline-secondary=move || !play.get()
                     on:click=move |_| play.set(false)>
                     <i class="bi bi-stop-fill me-2"></i>
                     Stop
                 </button>
-                <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
+                <span class="d-inline-flex flex-column border rounded p-2 mx-2"
+                    class:border-success=move || !play.get()
+                    class:border-secondary=move || play.get()>
                     <label class="text-muted me-2">"Items: "{move || items.get()}</label>
                     <input type="range" class="form-range" value=items.get_untracked() min="1" max="200" step="1"
                         disabled=move || play.get()
@@ -338,7 +342,7 @@ fn BubbleSort(
                 </span>
                 <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
                     <label class="text-muted me-2">"Delay "{move || update_ms.get()}"ms"</label>
-                    <input type="range" class="form-range w-auto" value=move || update_ms.get() min="1" max="300" step="1"
+                    <input type="range" class="form-range w-auto" value=move || update_ms.get() min="1" max="500" step="1"
                         on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
                 </span>
             </div>
