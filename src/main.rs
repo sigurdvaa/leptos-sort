@@ -60,32 +60,28 @@ fn Sidebar() -> impl IntoView {
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
                     <a href="/" class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == "/"
-                    >
+                        class:bg-danger=move || location.pathname.get() == "/" >
                         <i class="bi bi-house me-2"></i>
                         Home
                     </a>
                 </li>
                 <li>
                     <a href="/bubblesort" class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == "/bubblesort"
-                    >
+                        class:bg-danger=move || location.pathname.get() == "/bubblesort" >
                         <i class="bi bi-chat me-2"></i>
                         Bubble Sort
                     </a>
                 </li>
                 <li>
                     <a href="/sort2" class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == "/sort2"
-                    >
+                        class:bg-danger=move || location.pathname.get() == "/sort2" >
                         <i class="bi bi-question-lg me-2"></i>
                         Sort2
                     </a>
                 </li>
                 <li>
                     <a href="/sort3" class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == "/sort3"
-                    >
+                        class:bg-danger=move || location.pathname.get() == "/sort3" >
                         <i class="bi bi-question-lg me-2"></i>
                         Sort3
                     </a>
@@ -190,7 +186,8 @@ impl Bubble {
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
             if self.x < self.data.len() - 1 && i == self.y + 1 {
-                self.ctx2d.set_fill_style(&JsValue::from("#198754")); // bootstrap green
+                // self.ctx2d.set_fill_style(&JsValue::from("#198754")); // bootstrap green
+                self.ctx2d.set_fill_style(&JsValue::from("#dddddd")); // bootstrap green
             } else {
                 self.ctx2d.set_fill_style(&JsValue::from("#dc3545")); // bootstrap red
             }
