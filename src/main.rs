@@ -258,6 +258,8 @@ fn BubbleSort(
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
     let document = leptos::document();
+    let location = use_location();
+    let start_loc = location.pathname.get_untracked();
 
     *draw.borrow_mut() = Closure::new(move |prev_end_time| {
         if prev_update == 0.0 {
@@ -277,7 +279,10 @@ fn BubbleSort(
                 prev_update = now;
             }
 
-            if !bubble.done && play.get_untracked() {
+            if !bubble.done
+                && play.get_untracked()
+                && start_loc == location.pathname.get_untracked()
+            {
                 let _ = window_clone
                     .request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
             } else {
