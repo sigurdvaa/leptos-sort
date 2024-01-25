@@ -321,7 +321,7 @@ fn BubbleSort(
                 </span>
                 <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
                     <label class="text-muted me-2">"Volume: "{move || (volume.get() * 100.0).floor()}%</label>
-                    <input type="range" class="form-range" value=volume.with_untracked(|v| (v*100.0).floor()) min="1" max="100" step="1"
+                    <input type="range" class="form-range" value=volume.with_untracked(|v| (v * 100.0).floor()) min="0" max="100" step="1"
                         on:input=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
                 </span>
                 <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
