@@ -37,6 +37,10 @@ fn App() -> impl IntoView {
                         view=move || view! { <BubbleSort play update_ms items volume/> }
                     />
                     <Route
+                        path="/quicksort"
+                        view=move || view! { <QuickSort play update_ms items volume/> }
+                    />
+                    <Route
                         path="/*"
                         view=move || view! { <p>Not found</p> }
                     />
@@ -73,10 +77,10 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
                 <li>
-                    <a href="/sort2" class="nav-link text-white"
+                    <a href="/quicksort" class="nav-link text-white"
                         class:bg-danger=move || location.pathname.get() == "/sort2" >
-                        <i class="bi bi-question-lg me-2"></i>
-                        Sort2
+                        <i class="bi bi-vr me-2"></i>
+                        Quick Sort
                     </a>
                 </li>
                 <li>
@@ -254,7 +258,6 @@ fn BubbleSort(
 
     let canvas_ref = create_node_ref::<Canvas>();
     let window = web_sys::window().unwrap();
-    let window_clone = window.clone();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
     let document = leptos::document();
@@ -283,8 +286,8 @@ fn BubbleSort(
                 && play.get_untracked()
                 && start_loc == location.pathname.get_untracked()
             {
-                let _ = window_clone
-                    .request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
+                let _ =
+                    window.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
             } else {
                 let _ = bubble.osc.stop();
                 bubble_holder = None;
@@ -294,50 +297,81 @@ fn BubbleSort(
         }
     });
 
+    view! {
+        <div class="container-fluid my-3 p-4">
+        <Controls play update_ms items volume draw/>
+            <div class="d-flex justify-content-start h-75 p-2">
+                <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
+            </div>
+        </div>
+    }
+}
+
+#[component]
+fn QuickSort(
+    play: RwSignal<bool>,
+    update_ms: RwSignal<usize>,
+    items: RwSignal<usize>,
+    volume: RwSignal<f32>,
+) -> impl IntoView {
+    view! {
+        <p>Not implemented</p>
+    }
+}
+
+#[component]
+fn Controls(
+    play: RwSignal<bool>,
+    update_ms: RwSignal<usize>,
+    items: RwSignal<usize>,
+    volume: RwSignal<f32>,
+    draw: Callback,
+) -> impl IntoView {
+    let window = web_sys::window().expect("window should exists");
     let draw_to_canvas = move |_| {
         play.set(true);
         let _ = window.request_animation_frame(draw.borrow().as_ref().unchecked_ref());
     };
 
     view! {
-        <div class="container-fluid my-3 p-4">
-            <div class="d-flex justify-content-start mb-3">
-                <button class="col-1 btn btn-outline-danger mx-2"
+        <div class="d-flex justify-content-start mb-3">
+            // play
+            <button class="col-1 btn btn-outline-danger mx-2"
+                disabled=move || play.get()
+                on:click=draw_to_canvas>
+                <i class="bi bi-play-fill me-2"></i>
+                Play
+            </button>
+            // stop
+            <button class="col-1 btn mx-2"
+                disabled=move || !play.get()
+                class:btn-outline-warning=move || play.get()
+                class:btn-outline-secondary=move || !play.get()
+                on:click=move |_| play.set(false)>
+                <i class="bi bi-stop-fill me-2"></i>
+                Stop
+            </button>
+            // items
+            <span class="d-inline-flex flex-column border rounded p-2 mx-2"
+                class:border-success=move || !play.get()
+                class:border-secondary=move || play.get()>
+                <label class="text-muted me-2">"Items: "{move || items.get()}</label>
+                <input type="range" class="form-range" value=items.get_untracked() min="1" max="300" step="1"
                     disabled=move || play.get()
-                    on:click=draw_to_canvas>
-                    <i class="bi bi-play-fill me-2"></i>
-                    Play
-                </button>
-                <button class="col-1 btn mx-2"
-                    disabled=move || !play.get()
-                    class:btn-outline-warning=move || play.get()
-                    class:btn-outline-secondary=move || !play.get()
-                    on:click=move |_| play.set(false)>
-                    <i class="bi bi-stop-fill me-2"></i>
-                    Stop
-                </button>
-                <span class="d-inline-flex flex-column border rounded p-2 mx-2"
-                    class:border-success=move || !play.get()
-                    class:border-secondary=move || play.get()>
-                    <label class="text-muted me-2">"Items: "{move || items.get()}</label>
-                    <input type="range" class="form-range" value=items.get_untracked() min="1" max="300" step="1"
-                        disabled=move || play.get()
-                        on:input=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
-                </span>
-                <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
-                    <label class="text-muted me-2">"Volume: "{move || (volume.get() * 100.0).floor()}%</label>
-                    <input type="range" class="form-range" value=volume.with_untracked(|v| (v * 100.0).floor()) min="0" max="100" step="1"
-                        on:input=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
-                </span>
-                <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
-                    <label class="text-muted me-2">"Delay "{move || update_ms.get()}"ms"</label>
-                    <input type="range" class="form-range w-auto" value=move || update_ms.get() min="1" max="500" step="1"
-                        on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
-                </span>
-            </div>
-            <div class="d-flex justify-content-start h-75 p-2">
-                <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
-            </div>
+                    on:input=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
+            </span>
+            // volume
+            <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
+                <label class="text-muted me-2">"Volume: "{move || (volume.get() * 100.0).floor()}%</label>
+                <input type="range" class="form-range" value=volume.with_untracked(|v| (v * 100.0).floor()) min="0" max="100" step="1"
+                    on:input=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
+            </span>
+            // update ms
+            <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
+                <label class="text-muted me-2">"Delay "{move || update_ms.get()}"ms"</label>
+                <input type="range" class="form-range w-auto" value=move || update_ms.get() min="1" max="500" step="1"
+                    on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
+            </span>
         </div>
     }
 }
