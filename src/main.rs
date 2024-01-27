@@ -1,14 +1,29 @@
+mod sort;
 use leptos::html::Canvas;
 use leptos::*;
 use leptos_router::*;
-use rand::prelude::SliceRandom;
 use std::cell::RefCell;
 use std::rc::Rc;
-use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::CanvasRenderingContext2d;
-use web_sys::{AudioContext, OscillatorNode};
+use wasm_bindgen::{prelude::Closure, JsCast};
 
 type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
+
+#[allow(dead_code)]
+enum BoostrapColor {
+    Green,
+    Light,
+    Red,
+}
+
+impl BoostrapColor {
+    fn as_str(&self) -> &str {
+        match self {
+            Self::Green => "#198754",
+            Self::Light => "#dddddd",
+            Self::Red => "#dc3545",
+        }
+    }
+}
 
 fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
@@ -33,11 +48,11 @@ fn App() -> impl IntoView {
                         view=|| view! { <Home/> }
                     />
                     <Route
-                        path="/bubblesort"
+                        path=sort::Routes::Bubble.as_str()
                         view=move || view! { <BubbleSort play update_ms items volume/> }
                     />
                     <Route
-                        path="/quicksort"
+                        path=sort::Routes::Quick.as_str()
                         view=move || view! { <QuickSort play update_ms items volume/> }
                     />
                     <Route
@@ -70,16 +85,16 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
                 <li>
-                    <a href="/bubblesort" class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == "/bubblesort" >
+                    <a href=sort::Routes::Bubble.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == sort::Routes::Bubble.as_str() >
                         <i class="bi bi-chat me-2"></i>
                         Bubble Sort
                     </a>
                 </li>
                 <li>
-                    <a href="/quicksort" class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == "/sort2" >
-                        <i class="bi bi-vr me-2"></i>
+                    <a href=sort::Routes::Quick.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == sort::Routes::Quick.as_str() >
+                        <i class="bi bi-fast-forward me-2"></i>
                         Quick Sort
                     </a>
                 </li>
@@ -103,147 +118,14 @@ fn Sidebar() -> impl IntoView {
 #[component]
 fn Home() -> impl IntoView {
     view! {
-        <div class="container-fluid my-3 text-start p-5">
-            <h3>Visual Sorting</h3>
-            <p>Sorting algorithms visualized using Rust, Leptos, HTML Canvas, and Bootstrap</p>
+        <div class="container-fluid my-3 text-start p-4">
+            <h3 class="p-2">Visual Sorting</h3>
+            <p class="ps-2">
+                Sorting algorithms visualized using Rust, Leptos, WASM,
+                HTML Canvas, Web Audio API, and Bootstrap
+            </p>
         </div>
     }
-}
-
-struct Bubble {
-    x: usize,
-    y: usize,
-    data: Vec<usize>,
-    done: bool,
-    canvas_w: f64,
-    canvas_h: f64,
-    ctx2d: CanvasRenderingContext2d,
-    osc: OscillatorNode,
-}
-
-impl Bubble {
-    fn new(canvas_ref: &NodeRef<Canvas>, items: usize, volume: RwSignal<f32>) -> Self {
-        let mut rng = rand::thread_rng();
-        let mut nums: Vec<usize> = (1..=items).collect();
-        nums.shuffle(&mut rng);
-
-        let canvas = canvas_ref.get_untracked().expect("canvas should exist");
-        let canvas_w = canvas.client_width() as f64;
-        let canvas_h = canvas.client_height() as f64;
-        canvas.set_width(canvas_w as u32);
-        canvas.set_height(canvas_h as u32);
-
-        let ctx2d = canvas
-            .get_context("2d")
-            .unwrap()
-            .unwrap()
-            .dyn_into::<CanvasRenderingContext2d>()
-            .unwrap();
-
-        let audio_ctx = AudioContext::new().expect("to create audio context");
-        let audio_osc = audio_ctx.create_oscillator().expect("to create oscillator");
-        let audio_gain = audio_ctx.create_gain().expect("to create gain");
-        audio_gain.gain().set_value(0.0);
-        audio_osc
-            .connect_with_audio_node(&audio_gain)
-            .expect("audio connect gain");
-        audio_gain
-            .connect_with_audio_node(&audio_ctx.destination())
-            .expect("gain connect destination");
-        let _ = audio_osc.start();
-
-        create_effect(move |_| audio_gain.gain().set_value(volume.get()));
-
-        Self {
-            x: 0,
-            y: 0,
-            data: nums,
-            done: false,
-            canvas_h,
-            canvas_w,
-            ctx2d,
-            osc: audio_osc,
-        }
-    }
-
-    fn draw(&mut self, ticks: usize) {
-        for _ in 0..ticks {
-            self.update();
-        }
-
-        self.ctx2d
-            .clear_rect(0.0, 0.0, self.canvas_w, self.canvas_h);
-
-        let spacing = 2.0;
-        // how wide can one item be to for all items to fill the canvas, no spacing front or end
-        let width =
-            (self.canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
-
-        // draw each item
-        for (i, num) in self.data.iter().enumerate() {
-            let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
-            // draw item inside canvas, with width and spacing, no spacing front or end
-            let x = i as f64 * (width + spacing);
-            if self.x < self.data.len() - 1 && i == self.y + 1 {
-                // self.ctx2d.set_fill_style(&JsValue::from("#198754")); // bootstrap green
-                self.ctx2d.set_fill_style(&JsValue::from("#dddddd")); // bootstrap green
-            } else {
-                self.ctx2d.set_fill_style(&JsValue::from("#dc3545")); // bootstrap red
-            }
-            self.ctx2d.begin_path();
-            self.ctx2d.rect(x, self.canvas_h - height, width, height);
-            self.ctx2d.close_path();
-            self.ctx2d.fill();
-        }
-    }
-
-    fn update(&mut self) {
-        for x in self.x..self.data.len() {
-            self.x = x;
-            for y in self.y..self.data.len() - x - 1 {
-                self.y = y;
-                if self.data[y] > self.data[y + 1] {
-                    self.data.swap(y, y + 1);
-                    self.osc
-                        .frequency()
-                        .set_value(((500 / self.data.len()) * self.data[y + 1] + 150) as f32);
-                    return;
-                }
-            }
-            self.y = 0;
-        }
-        self.done = true;
-    }
-}
-
-#[allow(dead_code)]
-fn quicksort_pivot(list: &mut [usize], lo: usize, hi: usize) -> usize {
-    let mut idx: usize = lo;
-
-    for i in lo..hi {
-        if list[i] <= list[hi] {
-            list.swap(i, idx);
-            idx += 1;
-        }
-    }
-
-    if idx >= list.len() {
-        idx -= 1;
-    }
-
-    list.swap(hi, idx);
-    idx
-}
-
-#[allow(dead_code)]
-fn quicksort(list: &mut [usize], lo: usize, hi: usize) {
-    if lo >= hi {
-        return;
-    }
-
-    let pivot = quicksort_pivot(list, lo, hi);
-    quicksort(list, lo, pivot - 1);
-    quicksort(list, pivot + 1, hi);
 }
 
 #[component]
@@ -253,7 +135,7 @@ fn BubbleSort(
     items: RwSignal<usize>,
     volume: RwSignal<f32>,
 ) -> impl IntoView {
-    let mut bubble_holder: Option<Bubble> = None;
+    let mut bubble_holder: Option<sort::Bubble> = None;
     let mut prev_update = 0.0;
 
     let canvas_ref = create_node_ref::<Canvas>();
@@ -270,7 +152,11 @@ fn BubbleSort(
         }
 
         if bubble_holder.is_none() {
-            bubble_holder = Some(Bubble::new(&canvas_ref, items.get_untracked(), volume));
+            bubble_holder = Some(sort::Bubble::new(
+                &canvas_ref,
+                items.get_untracked(),
+                volume,
+            ));
         }
 
         if let Some(bubble) = bubble_holder.as_mut() {
@@ -299,7 +185,11 @@ fn BubbleSort(
 
     view! {
         <div class="container-fluid my-3 p-4">
-        <Controls play update_ms items volume draw/>
+            <h3 class="p-2">
+                <i class="bi bi-chat me-2"></i>
+                Bubble Sort
+            </h3>
+            <Controls play update_ms items volume draw/>
             <div class="d-flex justify-content-start h-75 p-2">
                 <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
             </div>
@@ -314,8 +204,59 @@ fn QuickSort(
     items: RwSignal<usize>,
     volume: RwSignal<f32>,
 ) -> impl IntoView {
+    let mut sorter: Option<sort::Quick> = None;
+    let mut prev_update = 0.0;
+
+    let canvas_ref = create_node_ref::<Canvas>();
+    let window = web_sys::window().unwrap();
+    let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
+    let draw_clone = draw.clone();
+    let document = leptos::document();
+    let location = use_location();
+    let start_loc = location.pathname.get_untracked();
+
+    *draw.borrow_mut() = Closure::new(move |prev_end_time| {
+        if prev_update == 0.0 {
+            prev_update = prev_end_time;
+        }
+
+        if sorter.is_none() {
+            sorter = Some(sort::Quick::new(&canvas_ref, items.get_untracked(), volume));
+        }
+
+        if let Some(sort) = sorter.as_mut() {
+            let now = document.timeline().current_time().unwrap();
+            let delta = now - prev_update;
+            let ticks = delta as usize / update_ms.get_untracked();
+            if ticks > 0 {
+                sort.draw(ticks);
+                prev_update = now;
+            }
+
+            if !sort.done && play.get_untracked() && start_loc == location.pathname.get_untracked()
+            {
+                let _ =
+                    window.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
+            } else {
+                let _ = sort.osc.stop();
+                sorter = None;
+                prev_update = 0.0;
+                play.set(false);
+            }
+        }
+    });
+
     view! {
-        <p>Not implemented</p>
+        <div class="container-fluid my-3 p-4">
+            <h3 class="p-2">
+                <i class="bi bi-fast-forward me-2"></i>
+                Quick Sort
+            </h3>
+            <Controls play update_ms items volume draw/>
+            <div class="d-flex justify-content-start h-75 p-2">
+                <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
+            </div>
+        </div>
     }
 }
 
