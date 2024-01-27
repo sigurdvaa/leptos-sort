@@ -15,6 +15,7 @@ pub struct Quick {
     canvas_h: f64,
     ctx2d: CanvasRenderingContext2d,
     pub osc: OscillatorNode,
+    pivots: Vec<(usize, usize, usize, usize)>,
 }
 
 impl Quick {
@@ -49,7 +50,7 @@ impl Quick {
         let _ = audio_osc.start();
 
         create_effect(move |_| audio_gain.gain().set_value(volume.get()));
-
+        let hi = nums.len() - 1;
         Self {
             x: 0,
             y: 0,
@@ -59,6 +60,7 @@ impl Quick {
             canvas_w,
             ctx2d,
             osc: audio_osc,
+            pivots: vec![(0, 0, hi, 0)],
         }
     }
 
@@ -95,12 +97,39 @@ impl Quick {
     }
 
     fn update(&mut self) {
-        let hi = self.data.len() - 1;
-        quicksort(&mut self.data, 0, hi);
-        self.done = true;
+        let (pivot, lo, hi, mut idx) = match self.pivots.pop() {
+            Some(data) => data,
+            None => {
+                self.done = true;
+                return;
+            }
+        };
+        for i in lo..hi {
+            if self.data[i] > self.data[hi] {
+                self.data.swap(i, idx);
+                idx += 1;
+                if idx >= self.data.len() {
+                    idx = self.data.len() - 1;
+                }
+                self.pivots.push((pivot, i, hi, idx));
+                return;
+            }
+        }
+        if lo >= hi {
+            return;
+        }
+        self.data.swap(hi, idx);
+
+        if idx > 0 {
+            self.pivots.push((pivot, idx + 1, hi, idx + 1));
+        }
+        if idx < self.data.len() - 1 {
+            self.pivots.push((pivot, lo, idx - 1, idx + 1));
+        }
     }
 }
 
+#[allow(dead_code)]
 fn quicksort_pivot(list: &mut [usize], lo: usize, hi: usize) -> usize {
     let mut idx: usize = lo;
 
@@ -119,6 +148,7 @@ fn quicksort_pivot(list: &mut [usize], lo: usize, hi: usize) -> usize {
     idx
 }
 
+#[allow(dead_code)]
 fn quicksort(list: &mut [usize], lo: usize, hi: usize) {
     if lo >= hi {
         return;
