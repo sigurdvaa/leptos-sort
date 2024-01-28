@@ -14,6 +14,9 @@ impl Routes {
         match self {
             Self::Bubble => "/bubblesort",
             Self::Quick => "/quicksort",
+            // TODO: insert sort
+            // TODO: select sort
+            // TODO: merge sort
         }
     }
 }
