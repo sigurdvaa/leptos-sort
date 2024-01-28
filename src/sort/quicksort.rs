@@ -159,16 +159,6 @@ impl Quick {
         self.data.swap(state.hi, state.idx);
         self.swap.update(|n| *n += 1);
 
-        // add state for lower half of pivot
-        if state.idx > 0 && state.lo < state.idx - 1 {
-            self.pivots.push(QuickState {
-                lo: state.lo,
-                hi: state.idx - 1,
-                idx: state.lo,
-                i: state.lo,
-            });
-        }
-
         // add state for upper half of pivot
         if state.idx + 1 < state.hi {
             self.pivots.push(QuickState {
@@ -176,6 +166,16 @@ impl Quick {
                 hi: state.hi,
                 idx: state.idx + 1,
                 i: state.idx + 1,
+            });
+        }
+
+        // add state for lower half of pivot
+        if state.idx > 0 && state.lo < state.idx - 1 {
+            self.pivots.push(QuickState {
+                lo: state.lo,
+                hi: state.idx - 1,
+                idx: state.lo,
+                i: state.lo,
             });
         }
     }
