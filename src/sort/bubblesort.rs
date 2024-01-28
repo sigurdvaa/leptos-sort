@@ -7,6 +7,8 @@ use web_sys::CanvasRenderingContext2d;
 use web_sys::{AudioContext, OscillatorNode};
 
 pub struct Bubble {
+    access: RwSignal<usize>,
+    swap: RwSignal<usize>,
     x: usize,
     y: usize,
     data: Vec<usize>,
@@ -18,7 +20,13 @@ pub struct Bubble {
 }
 
 impl Bubble {
-    pub fn new(canvas_ref: &NodeRef<Canvas>, items: usize, volume: RwSignal<f32>) -> Self {
+    pub fn new(
+        canvas_ref: &NodeRef<Canvas>,
+        items: usize,
+        volume: RwSignal<f32>,
+        access: RwSignal<usize>,
+        swap: RwSignal<usize>,
+    ) -> Self {
         let mut rng = rand::thread_rng();
         let mut nums: Vec<usize> = (1..=items).collect();
         nums.shuffle(&mut rng);
@@ -51,6 +59,8 @@ impl Bubble {
         create_effect(move |_| audio_gain.gain().set_value(volume.get()));
 
         Self {
+            access,
+            swap,
             x: 0,
             y: 0,
             data: nums,
@@ -80,7 +90,7 @@ impl Bubble {
             let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
-            if self.x < self.data.len() - 1 && i == self.y + 1 {
+            if !self.done && i == self.y + 1 {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
             } else {
@@ -99,8 +109,10 @@ impl Bubble {
             self.x = x;
             for y in self.y..self.data.len() - x - 1 {
                 self.y = y;
+                self.access.update(|n| *n += 1);
                 if self.data[y] > self.data[y + 1] {
                     self.data.swap(y, y + 1);
+                    self.swap.update(|n| *n += 1);
                     self.osc
                         .frequency()
                         .set_value(((550 / self.data.len()) * self.data[y + 1] + 250) as f32);

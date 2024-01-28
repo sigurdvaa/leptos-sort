@@ -14,6 +14,8 @@ struct QuickState {
 }
 
 pub struct Quick {
+    access: RwSignal<usize>,
+    swap: RwSignal<usize>,
     data: Vec<usize>,
     pub done: bool,
     canvas_w: f64,
@@ -24,7 +26,13 @@ pub struct Quick {
 }
 
 impl Quick {
-    pub fn new(canvas_ref: &NodeRef<Canvas>, items: usize, volume: RwSignal<f32>) -> Self {
+    pub fn new(
+        canvas_ref: &NodeRef<Canvas>,
+        items: usize,
+        volume: RwSignal<f32>,
+        access: RwSignal<usize>,
+        swap: RwSignal<usize>,
+    ) -> Self {
         let mut rng = rand::thread_rng();
         let mut nums: Vec<usize> = (1..=items).collect();
         nums.shuffle(&mut rng);
@@ -57,6 +65,8 @@ impl Quick {
         create_effect(move |_| audio_gain.gain().set_value(volume.get()));
         let hi = nums.len() - 1;
         Self {
+            access,
+            swap,
             data: nums,
             done: false,
             canvas_h,
@@ -86,7 +96,7 @@ impl Quick {
             (self.canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
 
         let (current_idx, current_hi) = match self.pivots.last() {
-            Some(state) => (state.idx, state.hi),
+            Some(state) => (state.idx.saturating_sub(1), state.hi),
             None => (0, self.data.len() - 1),
         };
 
@@ -126,14 +136,16 @@ impl Quick {
 
         // find all less or equal to pivot, return on tick
         for i in state.i..state.hi {
+            self.access.update(|n| *n += 1);
             if self.data[i] <= self.data[state.hi] {
+                self.swap.update(|n| *n += 1);
                 self.data.swap(i, state.idx);
-                state.idx += 1;
-                // tick done
-                state.i = i + 1;
                 self.osc
                     .frequency()
                     .set_value(((550 / self.data.len()) * self.data[state.idx] + 250) as f32);
+                state.idx += 1;
+                // tick done
+                state.i = i + 1;
                 self.pivots.push(state);
                 return;
             }
@@ -145,6 +157,7 @@ impl Quick {
             state.idx = self.data.len() - 1;
         }
         self.data.swap(state.hi, state.idx);
+        self.swap.update(|n| *n += 1);
 
         // add state for lower half of pivot
         if state.idx > 0 && state.lo < state.idx - 1 {

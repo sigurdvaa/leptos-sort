@@ -36,7 +36,7 @@ fn main() {
 fn App() -> impl IntoView {
     let update_ms = create_rw_signal(25);
     let play = create_rw_signal(false);
-    let items = create_rw_signal(30);
+    let items = create_rw_signal(50);
     let volume = create_rw_signal(0.1);
     view! {
         <Router>
@@ -138,6 +138,9 @@ fn BubbleSort(
     let mut bubble_holder: Option<sort::Bubble> = None;
     let mut prev_update = 0.0;
 
+    let access = create_rw_signal(0);
+    let swap = create_rw_signal(0);
+
     let canvas_ref = create_node_ref::<Canvas>();
     let window = web_sys::window().unwrap();
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
@@ -152,10 +155,14 @@ fn BubbleSort(
         }
 
         if bubble_holder.is_none() {
+            access.set(0);
+            swap.set(0);
             bubble_holder = Some(sort::Bubble::new(
                 &canvas_ref,
                 items.get_untracked(),
                 volume,
+                access,
+                swap,
             ));
         }
 
@@ -193,6 +200,7 @@ fn BubbleSort(
             <div class="d-flex justify-content-start h-75 p-2">
                 <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
             </div>
+            <Details access swap/>
         </div>
     }
 }
@@ -206,6 +214,9 @@ fn QuickSort(
 ) -> impl IntoView {
     let mut sorter: Option<sort::Quick> = None;
     let mut prev_update = 0.0;
+
+    let access = create_rw_signal(0);
+    let swap = create_rw_signal(0);
 
     let canvas_ref = create_node_ref::<Canvas>();
     let window = web_sys::window().unwrap();
@@ -221,7 +232,15 @@ fn QuickSort(
         }
 
         if sorter.is_none() {
-            sorter = Some(sort::Quick::new(&canvas_ref, items.get_untracked(), volume));
+            access.set(0);
+            swap.set(0);
+            sorter = Some(sort::Quick::new(
+                &canvas_ref,
+                items.get_untracked(),
+                volume,
+                access,
+                swap,
+            ));
         }
 
         if let Some(sort) = sorter.as_mut() {
@@ -256,7 +275,16 @@ fn QuickSort(
             <div class="d-flex justify-content-start h-75 p-2">
                 <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
             </div>
+            <Details access swap/>
         </div>
+    }
+}
+
+#[component]
+fn Details(access: RwSignal<usize>, swap: RwSignal<usize>) -> impl IntoView {
+    view! {
+        <div class="ps-2">"Array access: "{move || access.get()}</div>
+        <div class="ps-2">"Array swap: "{move || swap.get()}</div>
     }
 }
 
