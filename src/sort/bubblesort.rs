@@ -103,7 +103,7 @@ impl Bubble {
                     self.data.swap(y, y + 1);
                     self.osc
                         .frequency()
-                        .set_value(((500 / self.data.len()) * self.data[y + 1] + 150) as f32);
+                        .set_value(((550 / self.data.len()) * self.data[y + 1] + 250) as f32);
                     return;
                 }
             }

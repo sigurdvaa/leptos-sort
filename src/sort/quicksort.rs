@@ -6,16 +6,21 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::CanvasRenderingContext2d;
 use web_sys::{AudioContext, OscillatorNode};
 
+struct QuickState {
+    lo: usize,
+    hi: usize,
+    idx: usize,
+    i: usize,
+}
+
 pub struct Quick {
-    x: usize,
-    y: usize,
     data: Vec<usize>,
     pub done: bool,
     canvas_w: f64,
     canvas_h: f64,
     ctx2d: CanvasRenderingContext2d,
     pub osc: OscillatorNode,
-    pivots: Vec<(usize, usize, usize, usize)>,
+    pivots: Vec<QuickState>,
 }
 
 impl Quick {
@@ -52,15 +57,18 @@ impl Quick {
         create_effect(move |_| audio_gain.gain().set_value(volume.get()));
         let hi = nums.len() - 1;
         Self {
-            x: 0,
-            y: 0,
             data: nums,
             done: false,
             canvas_h,
             canvas_w,
             ctx2d,
             osc: audio_osc,
-            pivots: vec![(0, 0, hi, 0)],
+            pivots: vec![QuickState {
+                lo: 0,
+                hi,
+                idx: 0,
+                i: 0,
+            }],
         }
     }
 
@@ -77,18 +85,28 @@ impl Quick {
         let width =
             (self.canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
 
+        let (current_idx, current_hi) = match self.pivots.last() {
+            Some(state) => (state.idx, state.hi),
+            None => (0, self.data.len() - 1),
+        };
+
         // draw each item
         for (i, num) in self.data.iter().enumerate() {
             let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
-            if self.x < self.data.len() - 1 && i == self.y + 1 {
+
+            if !self.done && i == current_hi {
+                self.ctx2d
+                    .set_fill_style(&JsValue::from(BoostrapColor::Green.as_str()));
+            } else if !self.done && i == current_idx {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
             } else {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Red.as_str()));
             }
+
             self.ctx2d.begin_path();
             self.ctx2d.rect(x, self.canvas_h - height, width, height);
             self.ctx2d.close_path();
@@ -97,34 +115,55 @@ impl Quick {
     }
 
     fn update(&mut self) {
-        let (pivot, lo, hi, mut idx) = match self.pivots.pop() {
+        // continue previous state, or start a new lower or upper half
+        let mut state = match self.pivots.pop() {
             Some(data) => data,
             None => {
                 self.done = true;
                 return;
             }
         };
-        for i in lo..hi {
-            if self.data[i] > self.data[hi] {
-                self.data.swap(i, idx);
-                idx += 1;
-                if idx >= self.data.len() {
-                    idx = self.data.len() - 1;
-                }
-                self.pivots.push((pivot, i, hi, idx));
+
+        // find all less or equal to pivot, return on tick
+        for i in state.i..state.hi {
+            if self.data[i] <= self.data[state.hi] {
+                self.data.swap(i, state.idx);
+                state.idx += 1;
+                // tick done
+                state.i = i + 1;
+                self.osc
+                    .frequency()
+                    .set_value(((550 / self.data.len()) * self.data[state.idx] + 250) as f32);
+                self.pivots.push(state);
                 return;
             }
         }
-        if lo >= hi {
-            return;
-        }
-        self.data.swap(hi, idx);
 
-        if idx > 0 {
-            self.pivots.push((pivot, idx + 1, hi, idx + 1));
+        // when all less or equal to pivot has been found
+        //   move pivot to it's sorted position
+        if state.idx >= self.data.len() {
+            state.idx = self.data.len() - 1;
         }
-        if idx < self.data.len() - 1 {
-            self.pivots.push((pivot, lo, idx - 1, idx + 1));
+        self.data.swap(state.hi, state.idx);
+
+        // add state for lower half of pivot
+        if state.idx > 0 && state.lo < state.idx - 1 {
+            self.pivots.push(QuickState {
+                lo: state.lo,
+                hi: state.idx - 1,
+                idx: state.lo,
+                i: state.lo,
+            });
+        }
+
+        // add state for upper half of pivot
+        if state.idx + 1 < state.hi {
+            self.pivots.push(QuickState {
+                lo: state.idx + 1,
+                hi: state.hi,
+                idx: state.idx + 1,
+                i: state.idx + 1,
+            });
         }
     }
 }
