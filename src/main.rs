@@ -8,7 +8,6 @@ use wasm_bindgen::{prelude::Closure, JsCast};
 
 type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
 
-#[allow(dead_code)]
 enum BoostrapColor {
     Green,
     Light,
@@ -325,21 +324,24 @@ fn Controls(
                 class:border-success=move || !play.get()
                 class:border-secondary=move || play.get()>
                 <label class="text-muted me-2">"Items: "{move || items.get()}</label>
-                <input type="range" class="form-range" value=items.get_untracked() min="1" max="300" step="1"
+                <input type="range" class="form-range" min="1" max="300" step="1"
                     disabled=move || play.get()
-                    on:input=move |ev| items.set(event_target_value(&ev).parse().unwrap())/>
+                    prop:value=items.get_untracked()
+                    on:input=move |ev| items.set(event_target_value(&ev).parse().expect("integer"))/>
             </span>
             // volume
             <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
                 <label class="text-muted me-2">"Volume: "{move || (volume.get() * 100.0).floor()}%</label>
-                <input type="range" class="form-range" value=volume.with_untracked(|v| (v * 100.0).floor()) min="0" max="100" step="1"
-                    on:input=move |ev| volume.set(event_target_value(&ev).parse::<f32>().unwrap() / 100.0)/>
+                <input type="range" class="form-range" min="0" max="100" step="1"
+                    prop:value=volume.with_untracked(|v| (v * 100.0).floor())
+                    on:input=move |ev| volume.set(event_target_value(&ev).parse::<f32>().expect("f32") / 100.0)/>
             </span>
             // update ms
             <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
                 <label class="text-muted me-2">"Delay "{move || update_ms.get()}"ms"</label>
-                <input type="range" class="form-range w-auto" value=move || update_ms.get() min="1" max="500" step="1"
-                    on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("to be integer"))/>
+                <input type="range" class="form-range w-auto" min="1" max="500" step="1"
+                    prop:value=update_ms.get_untracked()
+                    on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("integer"))/>
             </span>
         </div>
     }
