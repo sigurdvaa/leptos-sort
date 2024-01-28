@@ -9,7 +9,7 @@ use web_sys::{AudioContext, OscillatorNode};
 struct QuickState {
     lo: usize,
     hi: usize,
-    idx: usize,
+    pivot: usize,
     i: usize,
 }
 
@@ -76,7 +76,7 @@ impl Quick {
             pivots: vec![QuickState {
                 lo: 0,
                 hi,
-                idx: 0,
+                pivot: 0,
                 i: 0,
             }],
         }
@@ -95,13 +95,14 @@ impl Quick {
         let width =
             (self.canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
 
-        let (curr_idx, curr_hi, curr_i) = match self.pivots.last() {
+        let (curr_pivot, curr_lo, curr_hi, curr_i) = match self.pivots.last() {
             Some(state) => (
-                state.idx.saturating_sub(1),
+                state.pivot.saturating_sub(1),
+                state.lo,
                 state.hi,
                 state.i.saturating_sub(1),
             ),
-            None => (0, self.data.len() - 1, 0),
+            None => (0, 0, self.data.len() - 1, 0),
         };
 
         // draw each item
@@ -110,10 +111,10 @@ impl Quick {
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
 
-            if !self.done && i == curr_hi {
+            if !self.done && (i == curr_hi || i == curr_lo) {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Green.as_str()));
-            } else if !self.done && (i == curr_idx || i == curr_i) {
+            } else if !self.done && (i == curr_pivot || i == curr_i) {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
             } else {
@@ -143,12 +144,12 @@ impl Quick {
             self.access.update(|n| *n += 1);
             if self.data[i] <= self.data[state.hi] {
                 self.swap.update(|n| *n += 1);
-                self.data.swap(i, state.idx);
+                self.data.swap(i, state.pivot);
                 self.osc
                     .frequency()
-                    .set_value(((450 / self.data.len()) * self.data[state.idx] + 250) as f32);
+                    .set_value(((450 / self.data.len()) * self.data[state.pivot] + 250) as f32);
                 // tick done
-                state.idx += 1;
+                state.pivot += 1;
                 state.i = i + 1;
                 self.pivots.push(state);
                 return;
@@ -157,28 +158,28 @@ impl Quick {
 
         // when all less or equal to pivot has been found
         //   move pivot to it's sorted position
-        if state.idx >= self.data.len() {
-            state.idx = self.data.len() - 1;
+        if state.pivot >= self.data.len() {
+            state.pivot = self.data.len() - 1;
         }
-        self.data.swap(state.hi, state.idx);
+        self.data.swap(state.hi, state.pivot);
         self.swap.update(|n| *n += 1);
 
         // add state for upper half of pivot
-        if state.idx + 1 < state.hi {
+        if state.pivot + 1 < state.hi {
             self.pivots.push(QuickState {
-                lo: state.idx + 1,
+                lo: state.pivot + 1,
                 hi: state.hi,
-                idx: state.idx + 1,
-                i: state.idx + 1,
+                pivot: state.pivot + 1,
+                i: state.pivot + 1,
             });
         }
 
         // add state for lower half of pivot
-        if state.idx > 0 && state.lo < state.idx - 1 {
+        if state.pivot > 0 && state.lo < state.pivot - 1 {
             self.pivots.push(QuickState {
                 lo: state.lo,
-                hi: state.idx - 1,
-                idx: state.lo,
+                hi: state.pivot - 1,
+                pivot: state.lo,
                 i: state.lo,
             });
         }
