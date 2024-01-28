@@ -93,7 +93,7 @@ fn Sidebar() -> impl IntoView {
                 <li>
                     <a href=sort::Routes::Quick.as_str() class="nav-link text-white"
                         class:bg-danger=move || location.pathname.get() == sort::Routes::Quick.as_str() >
-                        <i class="bi bi-chevron-bar-right me-2"></i>
+                        <i class="bi bi-vr me-2"></i>
                         Quick Sort
                     </a>
                 </li>
@@ -267,7 +267,7 @@ fn QuickSort(
     view! {
         <div class="container-fluid my-3 p-4">
             <h3 class="p-2">
-                <i class="bi bi-chevron-bar-right me-2"></i>
+                <i class="bi bi-vr me-2"></i>
                 Quick Sort
             </h3>
             <Controls play update_ms items volume draw/>
