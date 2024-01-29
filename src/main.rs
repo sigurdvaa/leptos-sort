@@ -1,4 +1,4 @@
-mod sort;
+mod visual_sort;
 use leptos::html::Canvas;
 use leptos::*;
 use leptos_router::*;
@@ -47,11 +47,15 @@ fn App() -> impl IntoView {
                         view=|| view! { <Home/> }
                     />
                     <Route
-                        path=sort::Routes::Bubble.as_str()
+                        path=visual_sort::Routes::Bubble.as_str()
                         view=move || view! { <BubbleSort play update_ms items volume/> }
                     />
                     <Route
-                        path=sort::Routes::Quick.as_str()
+                        path=visual_sort::Routes::Insert.as_str()
+                        view=move || view! { <InsertSort play update_ms items volume/> }
+                    />
+                    <Route
+                        path=visual_sort::Routes::Quick.as_str()
                         view=move || view! { <QuickSort play update_ms items volume/> }
                     />
                     <Route
@@ -84,15 +88,22 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
                 <li>
-                    <a href=sort::Routes::Bubble.as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == sort::Routes::Bubble.as_str() >
+                    <a href=visual_sort::Routes::Bubble.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Bubble.as_str() >
                         <i class="bi bi-chat me-2"></i>
                         Bubble Sort
                     </a>
                 </li>
                 <li>
-                    <a href=sort::Routes::Quick.as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == sort::Routes::Quick.as_str() >
+                    <a href=visual_sort::Routes::Insert.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Insert.as_str() >
+                        <i class="bi bi-chevron-bar-left me-2"></i>
+                        Insert Sort
+                    </a>
+                </li>
+                <li>
+                    <a href=visual_sort::Routes::Quick.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Quick.as_str() >
                         <i class="bi bi-vr me-2"></i>
                         Quick Sort
                     </a>
@@ -134,7 +145,7 @@ fn BubbleSort(
     items: RwSignal<usize>,
     volume: RwSignal<f32>,
 ) -> impl IntoView {
-    let mut bubble_holder: Option<sort::Bubble> = None;
+    let mut bubble_holder: Option<visual_sort::Bubble> = None;
     let mut prev_update = 0.0;
 
     let access = create_rw_signal(0);
@@ -156,7 +167,7 @@ fn BubbleSort(
         if bubble_holder.is_none() {
             access.set(0);
             swap.set(0);
-            bubble_holder = Some(sort::Bubble::new(
+            bubble_holder = Some(visual_sort::Bubble::new(
                 &canvas_ref,
                 items.get_untracked(),
                 volume,
@@ -205,13 +216,90 @@ fn BubbleSort(
 }
 
 #[component]
+fn InsertSort(
+    play: RwSignal<bool>,
+    update_ms: RwSignal<usize>,
+    items: RwSignal<usize>,
+    volume: RwSignal<f32>,
+) -> impl IntoView {
+    let mut bubble_holder: Option<visual_sort::Insert> = None;
+    let mut prev_update = 0.0;
+
+    let access = create_rw_signal(0);
+    let swap = create_rw_signal(0);
+
+    let canvas_ref = create_node_ref::<Canvas>();
+    let window = web_sys::window().unwrap();
+    let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
+    let draw_clone = draw.clone();
+    let document = leptos::document();
+    let location = use_location();
+    let start_loc = location.pathname.get_untracked();
+
+    *draw.borrow_mut() = Closure::new(move |prev_end_time| {
+        if prev_update == 0.0 {
+            prev_update = prev_end_time;
+        }
+
+        if bubble_holder.is_none() {
+            access.set(0);
+            swap.set(0);
+            bubble_holder = Some(visual_sort::Insert::new(
+                &canvas_ref,
+                items.get_untracked(),
+                volume,
+                access,
+                swap,
+            ));
+        }
+
+        if let Some(bubble) = bubble_holder.as_mut() {
+            let now = document.timeline().current_time().unwrap();
+            let delta = now - prev_update;
+            let ticks = delta as usize / update_ms.get_untracked();
+            if ticks > 0 {
+                bubble.draw(ticks);
+                prev_update = now;
+            }
+
+            if !bubble.done
+                && play.get_untracked()
+                && start_loc == location.pathname.get_untracked()
+            {
+                let _ =
+                    window.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
+            } else {
+                let _ = bubble.osc.stop();
+                bubble_holder = None;
+                prev_update = 0.0;
+                play.set(false);
+            }
+        }
+    });
+
+    view! {
+        <div class="container-fluid my-3 p-4">
+            <h3 class="p-2">
+                <i class="bi bi-chevron-bar-left me-2"></i>
+                Insert Sort
+            </h3>
+            <Controls play update_ms items volume draw/>
+            <div class="d-flex justify-content-start h-75 p-2">
+                <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
+            </div>
+            <Details access swap/>
+        </div>
+    }
+}
+
+#[component]
 fn QuickSort(
     play: RwSignal<bool>,
     update_ms: RwSignal<usize>,
     items: RwSignal<usize>,
     volume: RwSignal<f32>,
 ) -> impl IntoView {
-    let mut sorter: Option<sort::Quick> = None;
+    let mut sorter: Option<visual_sort::Quick> = None;
     let mut prev_update = 0.0;
 
     let access = create_rw_signal(0);
@@ -233,7 +321,7 @@ fn QuickSort(
         if sorter.is_none() {
             access.set(0);
             swap.set(0);
-            sorter = Some(sort::Quick::new(
+            sorter = Some(visual_sort::Quick::new(
                 &canvas_ref,
                 items.get_untracked(),
                 volume,
