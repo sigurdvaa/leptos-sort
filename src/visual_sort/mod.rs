@@ -1,14 +1,14 @@
 pub mod bubble;
-pub mod insert;
+pub mod insertion;
 pub mod quick;
 
 pub use bubble::Bubble;
-pub use insert::Insert;
+pub use insertion::Insertion;
 pub use quick::Quick;
 
 pub enum Routes {
     Bubble,
-    Insert,
+    Insertion,
     Quick,
 }
 
@@ -16,7 +16,7 @@ impl Routes {
     pub fn as_str(&self) -> &str {
         match self {
             Self::Bubble => "/bubble",
-            Self::Insert => "/insert",
+            Self::Insertion => "/insertion",
             Self::Quick => "/quick",
             // TODO: select sort
             // TODO: merge sort

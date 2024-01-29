@@ -51,8 +51,8 @@ fn App() -> impl IntoView {
                         view=move || view! { <BubbleSort play update_ms items volume/> }
                     />
                     <Route
-                        path=visual_sort::Routes::Insert.as_str()
-                        view=move || view! { <InsertSort play update_ms items volume/> }
+                        path=visual_sort::Routes::Insertion.as_str()
+                        view=move || view! { <InsertionSort play update_ms items volume/> }
                     />
                     <Route
                         path=visual_sort::Routes::Quick.as_str()
@@ -95,10 +95,10 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
                 <li>
-                    <a href=visual_sort::Routes::Insert.as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Insert.as_str() >
+                    <a href=visual_sort::Routes::Insertion.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Insertion.as_str() >
                         <i class="bi bi-chevron-bar-left me-2"></i>
-                        Insert Sort
+                        Insertion Sort
                     </a>
                 </li>
                 <li>
@@ -216,13 +216,13 @@ fn BubbleSort(
 }
 
 #[component]
-fn InsertSort(
+fn InsertionSort(
     play: RwSignal<bool>,
     update_ms: RwSignal<usize>,
     items: RwSignal<usize>,
     volume: RwSignal<f32>,
 ) -> impl IntoView {
-    let mut bubble_holder: Option<visual_sort::Insert> = None;
+    let mut bubble_holder: Option<visual_sort::Insertion> = None;
     let mut prev_update = 0.0;
 
     let access = create_rw_signal(0);
@@ -244,7 +244,7 @@ fn InsertSort(
         if bubble_holder.is_none() {
             access.set(0);
             swap.set(0);
-            bubble_holder = Some(visual_sort::Insert::new(
+            bubble_holder = Some(visual_sort::Insertion::new(
                 &canvas_ref,
                 items.get_untracked(),
                 volume,
@@ -281,7 +281,7 @@ fn InsertSort(
         <div class="container-fluid my-3 p-4">
             <h3 class="p-2">
                 <i class="bi bi-chevron-bar-left me-2"></i>
-                Insert Sort
+                Insertion Sort
             </h3>
             <Controls play update_ms items volume draw/>
             <div class="d-flex justify-content-start h-75 p-2">

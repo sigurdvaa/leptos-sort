@@ -6,12 +6,12 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::CanvasRenderingContext2d;
 use web_sys::{AudioContext, OscillatorNode};
 
-pub struct Insert {
+pub struct Insertion {
     access: RwSignal<usize>,
     swap: RwSignal<usize>,
     x: usize,
     y: usize,
-    insert: Option<usize>,
+    inserting: bool,
     data: Vec<usize>,
     pub done: bool,
     canvas_w: f64,
@@ -20,7 +20,7 @@ pub struct Insert {
     pub osc: OscillatorNode,
 }
 
-impl Insert {
+impl Insertion {
     pub fn new(
         canvas_ref: &NodeRef<Canvas>,
         items: usize,
@@ -64,7 +64,7 @@ impl Insert {
             swap,
             x: 1,
             y: 0,
-            insert: None,
+            inserting: false,
             data: nums,
             done: false,
             canvas_h,
@@ -93,19 +93,17 @@ impl Insert {
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
 
-            if !self.done && self.insert.is_some() {
-                match self.insert {
-                    Some(s) if i == s => self
-                        .ctx2d
-                        .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str())),
-                    _ => self
-                        .ctx2d
-                        .set_fill_style(&JsValue::from(BoostrapColor::Red.as_str())),
-                }
+            if !self.done && self.inserting && self.y == i {
+                self.ctx2d
+                    .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
+            } else if !self.done && self.x - 1 == i {
+                self.ctx2d
+                    .set_fill_style(&JsValue::from(BoostrapColor::Green.as_str()));
             } else {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Red.as_str()));
             }
+
             self.ctx2d.begin_path();
             self.ctx2d.rect(x, self.canvas_h - height, width, height);
             self.ctx2d.close_path();
@@ -114,32 +112,33 @@ impl Insert {
     }
 
     fn update(&mut self) {
-        if let Some(x) = self.insert {
-            if x > 0 {
-                let y = x - 1;
+        if self.inserting {
+            if self.y > 0 {
+                let i = self.y - 1;
                 self.access.update(|n| *n += 1);
-                if x > 0 && self.data[x] < self.data[y] {
+                if self.data[self.y] < self.data[i] {
                     self.swap.update(|n| *n += 1);
-                    self.data.swap(x, y);
-                    self.insert = Some(y);
+                    self.data.swap(self.y, i);
+                    self.y = i;
                     return;
                 }
             }
-            self.insert = None;
+            self.inserting = false;
         };
 
         for x in self.x..self.data.len() {
             self.x = x;
-            let y = x - 1;
+            let i = x - 1;
             self.access.update(|n| *n += 1);
-            if self.data[x] < self.data[y] {
-                self.insert = Some(y);
-                self.data.swap(x, y);
+            if self.data[x] < self.data[i] {
+                self.data.swap(x, i);
                 self.swap.update(|n| *n += 1);
                 self.osc
                     .frequency()
-                    .set_value(((450 / self.data.len()) * self.data[y] + 250) as f32);
+                    .set_value(((450 / self.data.len()) * self.data[i] + 250) as f32);
                 self.x = x + 1;
+                self.inserting = true;
+                self.y = i;
                 return;
             }
         }
