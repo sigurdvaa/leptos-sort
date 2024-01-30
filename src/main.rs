@@ -1,4 +1,5 @@
 mod visual_sort;
+
 use leptos::html::Canvas;
 use leptos::*;
 use leptos_router::*;
@@ -47,15 +48,15 @@ fn App() -> impl IntoView {
                         view=|| view! { <Home/> }
                     />
                     <Route
-                        path=visual_sort::Routes::Bubble.as_str()
+                        path=visual_sort::Sort::Bubble.as_str()
                         view=move || view! { <BubbleSort play update_ms items volume/> }
                     />
                     <Route
-                        path=visual_sort::Routes::Insertion.as_str()
+                        path=visual_sort::Sort::Insertion.as_str()
                         view=move || view! { <InsertionSort play update_ms items volume/> }
                     />
                     <Route
-                        path=visual_sort::Routes::Quick.as_str()
+                        path=visual_sort::Sort::Quick.as_str()
                         view=move || view! { <QuickSort play update_ms items volume/> }
                     />
                     <Route
@@ -88,22 +89,22 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
                 <li>
-                    <a href=visual_sort::Routes::Bubble.as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Bubble.as_str() >
+                    <a href=visual_sort::Sort::Bubble.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == visual_sort::Sort::Bubble.as_str() >
                         <i class="bi bi-chat me-2"></i>
                         Bubble Sort
                     </a>
                 </li>
                 <li>
-                    <a href=visual_sort::Routes::Insertion.as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Insertion.as_str() >
+                    <a href=visual_sort::Sort::Insertion.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == visual_sort::Sort::Insertion.as_str() >
                         <i class="bi bi-chevron-bar-left me-2"></i>
                         Insertion Sort
                     </a>
                 </li>
                 <li>
-                    <a href=visual_sort::Routes::Quick.as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == visual_sort::Routes::Quick.as_str() >
+                    <a href=visual_sort::Sort::Quick.as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == visual_sort::Sort::Quick.as_str() >
                         <i class="bi bi-vr me-2"></i>
                         Quick Sort
                     </a>
@@ -145,7 +146,7 @@ fn BubbleSort(
     items: RwSignal<usize>,
     volume: RwSignal<f32>,
 ) -> impl IntoView {
-    let mut bubble_holder: Option<visual_sort::Bubble> = None;
+    let mut bubble_holder: Option<Box<dyn visual_sort::VisualSort>> = None;
     let mut prev_update = 0.0;
 
     let access = create_rw_signal(0);
@@ -167,13 +168,13 @@ fn BubbleSort(
         if bubble_holder.is_none() {
             access.set(0);
             swap.set(0);
-            bubble_holder = Some(visual_sort::Bubble::new(
+            bubble_holder = Some(Box::new(visual_sort::Sort::Bubble.new(
                 &canvas_ref,
                 items.get_untracked(),
                 volume,
                 access,
                 swap,
-            ));
+            )));
         }
 
         if let Some(bubble) = bubble_holder.as_mut() {
@@ -185,14 +186,14 @@ fn BubbleSort(
                 prev_update = now;
             }
 
-            if !bubble.done
+            if !bubble.done()
                 && play.get_untracked()
                 && start_loc == location.pathname.get_untracked()
             {
                 let _ =
                     window.request_animation_frame(draw_clone.borrow().as_ref().unchecked_ref());
             } else {
-                let _ = bubble.osc.stop();
+                bubble.osc_stop();
                 bubble_holder = None;
                 prev_update = 0.0;
                 play.set(false);
