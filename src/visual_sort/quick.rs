@@ -1,10 +1,9 @@
-use crate::BoostrapColor;
+use crate::{BoostrapColor, VisualSort};
 use leptos::html::Canvas;
 use leptos::*;
 use rand::prelude::SliceRandom;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::CanvasRenderingContext2d;
-use web_sys::{AudioContext, OscillatorNode};
+use web_sys::{AudioContext, CanvasRenderingContext2d, OscillatorNode};
 
 struct QuickState {
     lo: usize,
@@ -17,16 +16,16 @@ pub struct Quick {
     access: RwSignal<usize>,
     swap: RwSignal<usize>,
     data: Vec<usize>,
-    pub done: bool,
+    done: bool,
     canvas_w: f64,
     canvas_h: f64,
     ctx2d: CanvasRenderingContext2d,
-    pub osc: OscillatorNode,
+    osc: OscillatorNode,
     pivots: Vec<QuickState>,
 }
 
-impl Quick {
-    pub fn new(
+impl VisualSort for Quick {
+    fn new(
         canvas_ref: &NodeRef<Canvas>,
         items: usize,
         volume: RwSignal<f32>,
@@ -82,7 +81,7 @@ impl Quick {
         }
     }
 
-    pub fn draw(&mut self, ticks: usize) {
+    fn draw(&mut self, ticks: usize) {
         for _ in 0..ticks {
             self.update();
         }
@@ -184,36 +183,12 @@ impl Quick {
             });
         }
     }
-}
 
-#[allow(dead_code)]
-fn quicksort_pivot(list: &mut [usize], lo: usize, hi: usize) -> usize {
-    let mut idx: usize = lo;
-
-    for i in lo..hi {
-        if list[i] <= list[hi] {
-            list.swap(i, idx);
-            idx += 1;
-        }
+    fn done(&self) -> bool {
+        self.done
     }
 
-    if idx >= list.len() {
-        idx -= 1;
+    fn osc_stop(&self) {
+        let _ = self.osc.stop();
     }
-
-    list.swap(hi, idx);
-    idx
-}
-
-#[allow(dead_code)]
-fn quicksort(list: &mut [usize], lo: usize, hi: usize) {
-    if lo >= hi {
-        return;
-    }
-
-    let pivot = quicksort_pivot(list, lo, hi);
-    if pivot > 0 {
-        quicksort(list, lo, pivot - 1);
-    }
-    quicksort(list, pivot + 1, hi);
 }

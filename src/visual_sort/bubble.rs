@@ -1,11 +1,9 @@
-use super::VisualSort;
-use crate::BoostrapColor;
+use crate::{BoostrapColor, VisualSort};
 use leptos::html::Canvas;
 use leptos::*;
 use rand::prelude::SliceRandom;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::CanvasRenderingContext2d;
-use web_sys::{AudioContext, OscillatorNode};
+use web_sys::{AudioContext, CanvasRenderingContext2d, OscillatorNode};
 
 pub struct Bubble {
     access: RwSignal<usize>,
@@ -13,55 +11,15 @@ pub struct Bubble {
     x: usize,
     y: usize,
     data: Vec<usize>,
-    pub done: bool,
+    done: bool,
     canvas_w: f64,
     canvas_h: f64,
     ctx2d: CanvasRenderingContext2d,
-    pub osc: OscillatorNode,
+    osc: OscillatorNode,
 }
 
 impl VisualSort for Bubble {
-    fn done(&self) -> bool {
-        self.done
-    }
-    fn draw(&mut self, ticks: usize) {
-        for _ in 0..ticks {
-            self.update();
-        }
-
-        self.ctx2d
-            .clear_rect(0.0, 0.0, self.canvas_w, self.canvas_h);
-
-        let spacing = 2.0;
-        // how wide can one item be to for all items to fill the canvas, no spacing front or end
-        let width =
-            (self.canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
-
-        // draw each item
-        for (i, num) in self.data.iter().enumerate() {
-            let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
-            // draw item inside canvas, with width and spacing, no spacing front or end
-            let x = i as f64 * (width + spacing);
-            if !self.done && i == self.y + 1 {
-                self.ctx2d
-                    .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
-            } else {
-                self.ctx2d
-                    .set_fill_style(&JsValue::from(BoostrapColor::Red.as_str()));
-            }
-            self.ctx2d.begin_path();
-            self.ctx2d.rect(x, self.canvas_h - height, width, height);
-            self.ctx2d.close_path();
-            self.ctx2d.fill();
-        }
-    }
-    fn osc_stop(&self) {
-        let _ = self.osc.stop();
-    }
-}
-
-impl Bubble {
-    pub fn new(
+    fn new(
         canvas_ref: &NodeRef<Canvas>,
         items: usize,
         volume: RwSignal<f32>,
@@ -111,6 +69,46 @@ impl Bubble {
             ctx2d,
             osc: audio_osc,
         }
+    }
+
+    fn done(&self) -> bool {
+        self.done
+    }
+
+    fn draw(&mut self, ticks: usize) {
+        for _ in 0..ticks {
+            self.update();
+        }
+
+        self.ctx2d
+            .clear_rect(0.0, 0.0, self.canvas_w, self.canvas_h);
+
+        let spacing = 2.0;
+        // how wide can one item be to for all items to fill the canvas, no spacing front or end
+        let width =
+            (self.canvas_w + spacing - (spacing * self.data.len() as f64)) / self.data.len() as f64;
+
+        // draw each item
+        for (i, num) in self.data.iter().enumerate() {
+            let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
+            // draw item inside canvas, with width and spacing, no spacing front or end
+            let x = i as f64 * (width + spacing);
+            if !self.done && i == self.y + 1 {
+                self.ctx2d
+                    .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
+            } else {
+                self.ctx2d
+                    .set_fill_style(&JsValue::from(BoostrapColor::Red.as_str()));
+            }
+            self.ctx2d.begin_path();
+            self.ctx2d.rect(x, self.canvas_h - height, width, height);
+            self.ctx2d.close_path();
+            self.ctx2d.fill();
+        }
+    }
+
+    fn osc_stop(&self) {
+        let _ = self.osc.stop();
     }
 
     fn update(&mut self) {

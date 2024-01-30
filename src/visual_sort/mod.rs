@@ -1,37 +1,54 @@
 use leptos::html::Canvas;
 use leptos::*;
 
-pub mod bubble;
-pub mod insertion;
-pub mod quick;
-
-// pub use bubble::Bubble;
-pub use insertion::Insertion;
-pub use quick::Quick;
+mod bubble;
+// mod insertion;
+// mod quick;
 
 pub trait VisualSort {
+    fn new(
+        canvas_ref: &NodeRef<Canvas>,
+        items: usize,
+        volume: RwSignal<f32>,
+        access: RwSignal<usize>,
+        swap: RwSignal<usize>,
+    ) -> Self;
+
     fn done(&self) -> bool;
+
     fn draw(&mut self, ticks: usize);
+
     fn osc_stop(&self);
+
+    fn update(&mut self);
 }
 
 pub enum Sort {
     Bubble,
-    Insertion,
-    Quick,
+    // Insertion,
+    // Quick,
+    // TODO: select sort
+    // TODO: merge sort
 }
 
 impl Sort {
-    pub fn as_str(&self) -> &str {
+    pub fn name_as_str(&self) -> &'static str {
         match self {
-            Self::Bubble => "/bubble",
-            Self::Insertion => "/insertion",
-            Self::Quick => "/quick",
-            // TODO: select sort
-            // TODO: merge sort
+            Self::Bubble => "Bubble Sort",
+            // Self::Insertion => "Insertion Sort",
+            // Self::Quick => "Quick Sort",
         }
     }
-    pub fn new(
+
+    pub fn route_as_str(&self) -> &'static str {
+        match self {
+            Self::Bubble => "/bubble",
+            // Self::Insertion => "/insertion",
+            // Self::Quick => "/quick",
+        }
+    }
+
+    pub fn init(
         &self,
         canvas_ref: &NodeRef<Canvas>,
         items: usize,
@@ -41,8 +58,10 @@ impl Sort {
     ) -> impl VisualSort {
         match self {
             Self::Bubble => bubble::Bubble::new(canvas_ref, items, volume, access, swap),
-            Self::Insertion => bubble::Bubble::new(canvas_ref, items, volume, access, swap),
-            Self::Quick => bubble::Bubble::new(canvas_ref, items, volume, access, swap),
+            // Self::Insertion => Box::new(insertion::Insertion::new(
+            //     canvas_ref, items, volume, access, swap,
+            // )),
+            // Self::Quick => Box::new(quick::Quick::new(canvas_ref, items, volume, access, swap)),
         }
     }
 }

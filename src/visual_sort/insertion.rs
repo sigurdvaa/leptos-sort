@@ -1,10 +1,9 @@
-use crate::BoostrapColor;
+use crate::{BoostrapColor, VisualSort};
 use leptos::html::Canvas;
 use leptos::*;
 use rand::prelude::SliceRandom;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::CanvasRenderingContext2d;
-use web_sys::{AudioContext, OscillatorNode};
+use web_sys::{AudioContext, CanvasRenderingContext2d, OscillatorNode};
 
 pub struct Insertion {
     access: RwSignal<usize>,
@@ -13,15 +12,15 @@ pub struct Insertion {
     y: usize,
     inserting: bool,
     data: Vec<usize>,
-    pub done: bool,
+    done: bool,
     canvas_w: f64,
     canvas_h: f64,
     ctx2d: CanvasRenderingContext2d,
-    pub osc: OscillatorNode,
+    osc: OscillatorNode,
 }
 
-impl Insertion {
-    pub fn new(
+impl VisualSort for Insertion {
+    fn new(
         canvas_ref: &NodeRef<Canvas>,
         items: usize,
         volume: RwSignal<f32>,
@@ -74,7 +73,7 @@ impl Insertion {
         }
     }
 
-    pub fn draw(&mut self, ticks: usize) {
+    fn draw(&mut self, ticks: usize) {
         for _ in 0..ticks {
             self.update();
         }
@@ -143,5 +142,13 @@ impl Insertion {
             }
         }
         self.done = true;
+    }
+
+    fn done(&self) -> bool {
+        self.done
+    }
+
+    fn osc_stop(&self) {
+        let _ = self.osc.stop();
     }
 }
