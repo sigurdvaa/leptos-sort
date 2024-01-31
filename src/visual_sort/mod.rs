@@ -6,14 +6,16 @@ mod insertion;
 mod quick;
 mod selection;
 
+pub struct SortParams<'a> {
+    pub canvas_ref: &'a NodeRef<Canvas>,
+    pub items: usize,
+    pub volume: RwSignal<f32>,
+    pub array_access: RwSignal<usize>,
+    pub array_swap: RwSignal<usize>,
+}
+
 pub trait VisualSort {
-    fn new(
-        canvas_ref: &NodeRef<Canvas>,
-        items: usize,
-        volume: RwSignal<f32>,
-        access: RwSignal<usize>,
-        swap: RwSignal<usize>,
-    ) -> Self
+    fn new(params: SortParams) -> Self
     where
         Self: Sized;
 
@@ -32,6 +34,7 @@ pub enum Sort {
     Quick,
     Selection,
     // TODO: merge sort
+    // TODO: heapsort
 }
 
 impl Sort {
@@ -39,7 +42,7 @@ impl Sort {
         match self {
             Self::Bubble => "Bubble Sort",
             Self::Insertion => "Insertion Sort",
-            Self::Quick => "Quick Sort",
+            Self::Quick => "Quicksort",
             Self::Selection => "Selection Sort",
         }
     }
@@ -53,23 +56,12 @@ impl Sort {
         }
     }
 
-    pub fn init(
-        &self,
-        canvas_ref: &NodeRef<Canvas>,
-        items: usize,
-        volume: RwSignal<f32>,
-        access: RwSignal<usize>,
-        swap: RwSignal<usize>,
-    ) -> Box<dyn VisualSort> {
+    pub fn init(&self, params: SortParams) -> Box<dyn VisualSort> {
         match self {
-            Self::Bubble => Box::new(bubble::Bubble::new(canvas_ref, items, volume, access, swap)),
-            Self::Insertion => Box::new(insertion::Insertion::new(
-                canvas_ref, items, volume, access, swap,
-            )),
-            Self::Quick => Box::new(quick::Quick::new(canvas_ref, items, volume, access, swap)),
-            Self::Selection => Box::new(selection::Selection::new(
-                canvas_ref, items, volume, access, swap,
-            )),
+            Self::Bubble => Box::new(bubble::Bubble::new(params)),
+            Self::Insertion => Box::new(insertion::Insertion::new(params)),
+            Self::Quick => Box::new(quick::Quick::new(params)),
+            Self::Selection => Box::new(selection::Selection::new(params)),
         }
     }
 }

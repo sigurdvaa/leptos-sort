@@ -1,5 +1,4 @@
-use crate::{BoostrapColor, VisualSort};
-use leptos::html::Canvas;
+use crate::{BoostrapColor, SortParams, VisualSort};
 use leptos::*;
 use rand::prelude::SliceRandom;
 use wasm_bindgen::{JsCast, JsValue};
@@ -13,8 +12,8 @@ struct QuickState {
 }
 
 pub struct Quick {
-    access: RwSignal<usize>,
-    swap: RwSignal<usize>,
+    array_access: RwSignal<usize>,
+    array_swap: RwSignal<usize>,
     data: Vec<usize>,
     done: bool,
     canvas_w: f64,
@@ -25,18 +24,15 @@ pub struct Quick {
 }
 
 impl VisualSort for Quick {
-    fn new(
-        canvas_ref: &NodeRef<Canvas>,
-        items: usize,
-        volume: RwSignal<f32>,
-        access: RwSignal<usize>,
-        swap: RwSignal<usize>,
-    ) -> Self {
+    fn new(params: SortParams) -> Self {
         let mut rng = rand::thread_rng();
-        let mut nums: Vec<usize> = (1..=items).collect();
+        let mut nums: Vec<usize> = (1..=params.items).collect();
         nums.shuffle(&mut rng);
 
-        let canvas = canvas_ref.get_untracked().expect("canvas should exist");
+        let canvas = params
+            .canvas_ref
+            .get_untracked()
+            .expect("canvas should exist");
         let canvas_w = canvas.client_width() as f64;
         let canvas_h = canvas.client_height() as f64;
         canvas.set_width(canvas_w as u32);
@@ -61,11 +57,11 @@ impl VisualSort for Quick {
             .expect("gain connect destination");
         let _ = audio_osc.start();
 
-        create_effect(move |_| audio_gain.gain().set_value(volume.get()));
+        create_effect(move |_| audio_gain.gain().set_value(params.volume.get()));
         let hi = nums.len() - 1;
         Self {
-            access,
-            swap,
+            array_access: params.array_access,
+            array_swap: params.array_swap,
             data: nums,
             done: false,
             canvas_h,
@@ -140,9 +136,9 @@ impl VisualSort for Quick {
 
         // find all less or equal to pivot, return on tick
         for i in state.i..state.hi {
-            self.access.update(|n| *n += 1);
+            self.array_access.update(|n| *n += 1);
             if self.data[i] <= self.data[state.hi] {
-                self.swap.update(|n| *n += 1);
+                self.array_swap.update(|n| *n += 1);
                 self.data.swap(i, state.pivot);
                 self.osc
                     .frequency()
@@ -161,7 +157,7 @@ impl VisualSort for Quick {
             state.pivot = self.data.len() - 1;
         }
         self.data.swap(state.hi, state.pivot);
-        self.swap.update(|n| *n += 1);
+        self.array_swap.update(|n| *n += 1);
 
         // add state for upper half of pivot
         if state.pivot + 1 < state.hi {

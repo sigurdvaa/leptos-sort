@@ -1,13 +1,12 @@
-use crate::{BoostrapColor, VisualSort};
-use leptos::html::Canvas;
+use crate::{BoostrapColor, SortParams, VisualSort};
 use leptos::*;
 use rand::prelude::SliceRandom;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{AudioContext, CanvasRenderingContext2d, OscillatorNode};
 
 pub struct Bubble {
-    access: RwSignal<usize>,
-    swap: RwSignal<usize>,
+    array_access: RwSignal<usize>,
+    array_swap: RwSignal<usize>,
     x: usize,
     y: usize,
     data: Vec<usize>,
@@ -19,18 +18,15 @@ pub struct Bubble {
 }
 
 impl VisualSort for Bubble {
-    fn new(
-        canvas_ref: &NodeRef<Canvas>,
-        items: usize,
-        volume: RwSignal<f32>,
-        access: RwSignal<usize>,
-        swap: RwSignal<usize>,
-    ) -> Self {
+    fn new(params: SortParams) -> Self {
         let mut rng = rand::thread_rng();
-        let mut nums: Vec<usize> = (1..=items).collect();
+        let mut nums: Vec<usize> = (1..=params.items).collect();
         nums.shuffle(&mut rng);
 
-        let canvas = canvas_ref.get_untracked().expect("canvas should exist");
+        let canvas = params
+            .canvas_ref
+            .get_untracked()
+            .expect("canvas should exist");
         let canvas_w = canvas.client_width() as f64;
         let canvas_h = canvas.client_height() as f64;
         canvas.set_width(canvas_w as u32);
@@ -55,11 +51,11 @@ impl VisualSort for Bubble {
             .expect("gain connect destination");
         let _ = audio_osc.start();
 
-        create_effect(move |_| audio_gain.gain().set_value(volume.get()));
+        create_effect(move |_| audio_gain.gain().set_value(params.volume.get()));
 
         Self {
-            access,
-            swap,
+            array_access: params.array_access,
+            array_swap: params.array_swap,
             x: 0,
             y: 0,
             data: nums,
@@ -93,6 +89,7 @@ impl VisualSort for Bubble {
             let height = *num as f64 * (self.canvas_h / self.data.len() as f64);
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
+
             if !self.done && i == self.y + 1 {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
@@ -100,6 +97,7 @@ impl VisualSort for Bubble {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Red.as_str()));
             }
+
             self.ctx2d.begin_path();
             self.ctx2d.rect(x, self.canvas_h - height, width, height);
             self.ctx2d.close_path();
@@ -116,10 +114,10 @@ impl VisualSort for Bubble {
             self.x = x;
             for y in self.y..self.data.len() - x - 1 {
                 self.y = y;
-                self.access.update(|n| *n += 1);
+                self.array_access.update(|n| *n += 1);
                 if self.data[y] > self.data[y + 1] {
                     self.data.swap(y, y + 1);
-                    self.swap.update(|n| *n += 1);
+                    self.array_swap.update(|n| *n += 1);
                     self.osc
                         .frequency()
                         .set_value(((450 / self.data.len()) * self.data[y + 1] + 250) as f32);

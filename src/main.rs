@@ -5,7 +5,7 @@ use leptos::*;
 use leptos_router::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-use visual_sort::{Sort, VisualSort};
+use visual_sort::{Sort, SortParams, VisualSort};
 use wasm_bindgen::{prelude::Closure, JsCast};
 
 type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
@@ -82,7 +82,7 @@ fn Sidebar() -> impl IntoView {
         <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 260px;">
             <a href="/" class="d-flex align-items-center ms-3 mb-3 mb-md-0 me-md-auto text-decoration-none">
                 <i class="bi bi-filter fs-3 me-2 text-danger"></i>
-                <span class="fs-4 text-danger">Sort</span>
+                <span class="fs-4 text-danger">VisualSort</span>
             </a>
             <hr/>
             <ul class="nav nav-pills flex-column mb-auto">
@@ -155,8 +155,8 @@ fn DisplaySort(
     let mut sorter_holder: Option<Box<dyn VisualSort>> = None;
     let mut prev_update = 0.0;
 
-    let access = create_rw_signal(0);
-    let swap = create_rw_signal(0);
+    let array_access = create_rw_signal(0);
+    let array_swap = create_rw_signal(0);
 
     let sort_name = sort.name_as_str();
     let canvas_ref = create_node_ref::<Canvas>();
@@ -174,10 +174,16 @@ fn DisplaySort(
         }
 
         if sorter_holder.is_none() {
-            access.set(0);
-            swap.set(0);
-            sorter_holder =
-                Some(sort.init(&canvas_ref, items.get_untracked(), volume, access, swap));
+            array_access.set(0);
+            array_swap.set(0);
+            let params = SortParams {
+                canvas_ref: &canvas_ref,
+                items: items.get_untracked(),
+                volume,
+                array_access,
+                array_swap,
+            };
+            sorter_holder = Some(sort.init(params));
         }
 
         if let Some(bubble) = sorter_holder.as_mut() {
@@ -213,16 +219,16 @@ fn DisplaySort(
             <div class="d-flex justify-content-start h-75 p-2">
                 <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
             </div>
-            <Details access swap/>
+            <Details array_access array_swap/>
         </div>
     }
 }
 
 #[component]
-fn Details(access: RwSignal<usize>, swap: RwSignal<usize>) -> impl IntoView {
+fn Details(array_access: RwSignal<usize>, array_swap: RwSignal<usize>) -> impl IntoView {
     view! {
-        <div class="ps-2">"Array access: "{move || access.get()}</div>
-        <div class="ps-2">"Array swap: "{move || swap.get()}</div>
+        <div class="ps-2">"Array access: "{move || array_access.get()}</div>
+        <div class="ps-2">"Array swap: "{move || array_swap.get()}</div>
     }
 }
 

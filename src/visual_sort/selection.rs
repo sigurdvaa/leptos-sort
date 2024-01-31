@@ -1,13 +1,12 @@
-use crate::{BoostrapColor, VisualSort};
-use leptos::html::Canvas;
+use crate::{BoostrapColor, SortParams, VisualSort};
 use leptos::*;
 use rand::prelude::SliceRandom;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{AudioContext, CanvasRenderingContext2d, OscillatorNode};
 
 pub struct Selection {
-    access: RwSignal<usize>,
-    swap: RwSignal<usize>,
+    array_access: RwSignal<usize>,
+    array_swap: RwSignal<usize>,
     s: usize,
     x: usize,
     y: usize,
@@ -20,18 +19,15 @@ pub struct Selection {
 }
 
 impl VisualSort for Selection {
-    fn new(
-        canvas_ref: &NodeRef<Canvas>,
-        items: usize,
-        volume: RwSignal<f32>,
-        access: RwSignal<usize>,
-        swap: RwSignal<usize>,
-    ) -> Self {
+    fn new(params: SortParams) -> Self {
         let mut rng = rand::thread_rng();
-        let mut nums: Vec<usize> = (1..=items).collect();
+        let mut nums: Vec<usize> = (1..=params.items).collect();
         nums.shuffle(&mut rng);
 
-        let canvas = canvas_ref.get_untracked().expect("canvas should exist");
+        let canvas = params
+            .canvas_ref
+            .get_untracked()
+            .expect("canvas should exist");
         let canvas_w = canvas.client_width() as f64;
         let canvas_h = canvas.client_height() as f64;
         canvas.set_width(canvas_w as u32);
@@ -56,11 +52,11 @@ impl VisualSort for Selection {
             .expect("gain connect destination");
         let _ = audio_osc.start();
 
-        create_effect(move |_| audio_gain.gain().set_value(volume.get()));
+        create_effect(move |_| audio_gain.gain().set_value(params.volume.get()));
 
         Self {
-            access,
-            swap,
+            array_access: params.array_access,
+            array_swap: params.array_swap,
             s: 0,
             x: 0,
             y: 0,
@@ -96,10 +92,10 @@ impl VisualSort for Selection {
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
 
-            if !self.done && (i == self.y || i == self.s) {
+            if !self.done && i == self.y {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
-            } else if !self.done && i == self.x {
+            } else if !self.done && (i == self.x || i == self.s) {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Green.as_str()));
             } else {
@@ -122,7 +118,7 @@ impl VisualSort for Selection {
         for x in self.x..self.data.len() - 1 {
             self.x = x;
             if self.y < self.data.len() {
-                self.access.update(|n| *n += 1);
+                self.array_access.update(|n| *n += 1);
                 if self.data[self.y] < self.data[self.s] {
                     self.s = self.y;
                     self.osc
@@ -133,7 +129,7 @@ impl VisualSort for Selection {
                 return;
             }
             self.data.swap(x, self.s);
-            self.swap.update(|n| *n += 1);
+            self.array_swap.update(|n| *n += 1);
             self.s = x + 1;
             self.y = x + 2;
         }
