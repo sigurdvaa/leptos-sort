@@ -115,8 +115,7 @@ impl VisualSort for Selection {
     }
 
     fn update(&mut self) {
-        for x in self.x..self.data.len() - 1 {
-            self.x = x;
+        if self.x < self.data.len() - 1 {
             if self.y < self.data.len() {
                 self.array_access.update(|n| *n += 1);
                 if self.data[self.y] < self.data[self.s] {
@@ -128,11 +127,18 @@ impl VisualSort for Selection {
                 self.y += 1;
                 return;
             }
-            self.data.swap(x, self.s);
+
             self.array_swap.update(|n| *n += 1);
-            self.s = x + 1;
-            self.y = x + 2;
+            self.data.swap(self.x, self.s);
+
+            self.x += 1;
+            self.s = self.x;
+            self.y = self.x + 1;
+            self.osc
+                .frequency()
+                .set_value(((450 / self.data.len()) * self.data[self.s] + 250) as f32);
+        } else {
+            self.done = true;
         }
-        self.done = true;
     }
 }
