@@ -52,14 +52,18 @@ fn App() -> impl IntoView {
                         path=Sort::Bubble.route_as_str()
                         view=move || view! { <DisplaySort sort=Sort::Bubble play update_ms items volume/> }
                     />
-                    // <Route
-                    //     path=Sort::Insertion.route_as_str()
-                    //     view=move || view! { <DisplaySort sort=Sort::Insertion play update_ms items volume/> }
-                    // />
-                    // <Route
-                    //     path=Sort::Quick.route_as_str()
-                    //     view=move || view! { <DisplaySort sort=Sort::Quick play update_ms items volume/> }
-                    // />
+                    <Route
+                        path=Sort::Insertion.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Insertion play update_ms items volume/> }
+                    />
+                    <Route
+                        path=Sort::Selection.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Selection play update_ms items volume/> }
+                    />
+                    <Route
+                        path=Sort::Quick.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Quick play update_ms items volume/> }
+                    />
                     <Route
                         path="/*"
                         view=move || view! { <p>Not found</p> }
@@ -96,25 +100,25 @@ fn Sidebar() -> impl IntoView {
                         { Sort::Bubble.name_as_str().to_string() }
                     </a>
                 </li>
-                // <li>
-                //     <a href=Sort::Insertion.route_as_str() class="nav-link text-white"
-                //         class:bg-danger=move || location.pathname.get() == Sort::Insertion.route_as_str() >
-                //         <i class="bi bi-chevron-bar-left me-2"></i>
-                //         { Sort::Insertion.name_as_str().to_string() }
-                //     </a>
-                // </li>
-                // <li>
-                //     <a href=Sort::Quick.route_as_str() class="nav-link text-white"
-                //         class:bg-danger=move || location.pathname.get() == Sort::Quick.route_as_str() >
-                //         <i class="bi bi-vr me-2"></i>
-                //         { Sort::Quick.name_as_str().to_string() }
-                //     </a>
-                // </li>
                 <li>
-                    <a href="/sort3" class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == "/sort3" >
-                        <i class="bi bi-question-lg me-2"></i>
-                        Sort3
+                    <a href=Sort::Insertion.route_as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == Sort::Insertion.route_as_str() >
+                        <i class="bi bi-chevron-bar-left me-2"></i>
+                        { Sort::Insertion.name_as_str().to_string() }
+                    </a>
+                </li>
+                <li>
+                    <a href=Sort::Selection.route_as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == Sort::Selection.route_as_str() >
+                        <i class="bi bi-arrows-collapse-vertical me-2"></i>
+                        { Sort::Selection.name_as_str().to_string() }
+                    </a>
+                </li>
+                <li>
+                    <a href=Sort::Quick.route_as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == Sort::Quick.route_as_str() >
+                        <i class="bi bi-vr me-2"></i>
+                        { Sort::Quick.name_as_str().to_string() }
                     </a>
                 </li>
             </ul>
@@ -163,6 +167,7 @@ fn DisplaySort(
 
     let draw: Callback = Rc::new(RefCell::new(Closure::new(move |_| ())));
     let draw_clone = draw.clone();
+
     *draw.borrow_mut() = Closure::new(move |prev_end_time| {
         if prev_update == 0.0 {
             prev_update = prev_end_time;
@@ -171,13 +176,8 @@ fn DisplaySort(
         if sorter_holder.is_none() {
             access.set(0);
             swap.set(0);
-            sorter_holder = Some(Box::new(sort.init(
-                &canvas_ref,
-                items.get_untracked(),
-                volume,
-                access,
-                swap,
-            )));
+            sorter_holder =
+                Some(sort.init(&canvas_ref, items.get_untracked(), volume, access, swap));
         }
 
         if let Some(bubble) = sorter_holder.as_mut() {
