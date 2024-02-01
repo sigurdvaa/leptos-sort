@@ -53,6 +53,10 @@ fn App() -> impl IntoView {
                         view=move || view! { <DisplaySort sort=Sort::Bubble play update_ms items volume/> }
                     />
                     <Route
+                        path=Sort::Heap.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Heap play update_ms items volume/> }
+                    />
+                    <Route
                         path=Sort::Insertion.route_as_str()
                         view=move || view! { <DisplaySort sort=Sort::Insertion play update_ms items volume/> }
                     />
@@ -98,6 +102,13 @@ fn Sidebar() -> impl IntoView {
                         class:bg-danger=move || location.pathname.get() == Sort::Bubble.route_as_str() >
                         <i class="bi bi-chat me-2"></i>
                         { Sort::Bubble.name_as_str().to_string() }
+                    </a>
+                </li>
+                <li>
+                    <a href=Sort::Heap.route_as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == Sort::Heap.route_as_str() >
+                        <i class="bi bi-diagram-2 me-2"></i>
+                        { Sort::Heap.name_as_str().to_string() }
                     </a>
                 </li>
                 <li>

@@ -2,6 +2,7 @@ use leptos::html::Canvas;
 use leptos::*;
 
 mod bubble;
+mod heap;
 mod insertion;
 mod quick;
 mod selection;
@@ -30,17 +31,18 @@ pub trait VisualSort {
 
 pub enum Sort {
     Bubble,
+    Heap,
     Insertion,
     Quick,
     Selection,
     // TODO: merge sort
-    // TODO: heapsort
 }
 
 impl Sort {
     pub fn name_as_str(&self) -> &'static str {
         match self {
             Self::Bubble => "Bubble Sort",
+            Self::Heap => "Heapsort",
             Self::Insertion => "Insertion Sort",
             Self::Quick => "Quicksort",
             Self::Selection => "Selection Sort",
@@ -50,6 +52,7 @@ impl Sort {
     pub fn route_as_str(&self) -> &'static str {
         match self {
             Self::Bubble => "/bubble",
+            Self::Heap => "/heap",
             Self::Insertion => "/insertion",
             Self::Quick => "/quick",
             Self::Selection => "/selection",
@@ -59,6 +62,7 @@ impl Sort {
     pub fn init(&self, params: SortParams) -> Box<dyn VisualSort> {
         match self {
             Self::Bubble => Box::new(bubble::Bubble::new(params)),
+            Self::Heap => Box::new(heap::Heap::new(params)),
             Self::Insertion => Box::new(insertion::Insertion::new(params)),
             Self::Quick => Box::new(quick::Quick::new(params)),
             Self::Selection => Box::new(selection::Selection::new(params)),
