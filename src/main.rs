@@ -280,7 +280,7 @@ fn Controls(
                 class:border-success=move || !play.get()
                 class:border-secondary=move || play.get()>
                 <label class="text-muted me-2">"Items: "{move || items.get()}</label>
-                <input type="range" class="form-range" min="1" max="300" step="1"
+                <input type="range" class="form-range" min="1" max="1000" step="1"
                     disabled=move || play.get()
                     prop:value=items.get_untracked()
                     on:input=move |ev| items.set(event_target_value(&ev).parse().expect("integer"))/>
@@ -295,7 +295,7 @@ fn Controls(
             // update ms
             <span class="d-inline-flex flex-column border border-success rounded p-2 mx-2">
                 <label class="text-muted me-2">"Delay "{move || update_ms.get()}"ms"</label>
-                <input type="range" class="form-range w-auto" min="1" max="500" step="1"
+                <input type="range" class="form-range w-auto" min="1" max="1000" step="1"
                     prop:value=update_ms.get_untracked()
                     on:input=move |ev| update_ms.set(event_target_value(&ev).parse().expect("integer"))/>
             </span>

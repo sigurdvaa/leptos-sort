@@ -97,7 +97,7 @@ impl VisualSort for Heap {
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
 
-            if !self.done && i == self.x {
+            if !self.done && i == self.y {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
             } else if !self.done && i == self.heap_len {
@@ -125,6 +125,10 @@ impl VisualSort for Heap {
         // add items to heap
         if !self.heaped {
             if self.x < self.data.len() {
+                // TODO: if data len is greater than 450, the pitch is the same for all values
+                self.osc
+                    .frequency()
+                    .set_value(((450 / self.data.len()) * self.data[self.x] + 250) as f32);
                 self.push(self.data[self.x]);
                 self.x += 1;
                 return;
@@ -135,6 +139,9 @@ impl VisualSort for Heap {
         // remove max heap, and add to last pos in array
         // TODO: visualize heapify?
         if let Some(v) = self.pop() {
+            self.osc
+                .frequency()
+                .set_value(((450 / self.data.len()) * v + 250) as f32);
             self.array_swap.update(|n| *n += 1);
             self.data[self.heap_len] = v;
             return;
@@ -167,6 +174,7 @@ impl Heap {
                 self.array_swap.update(|n| *n += 1);
                 self.data.swap(p, i);
                 self.heap_up(p);
+                self.y = p;
             }
         }
     }
@@ -194,6 +202,7 @@ impl Heap {
     fn push(&mut self, value: usize) {
         self.array_swap.update(|n| *n += 1);
         self.data[self.heap_len] = value;
+        self.y = self.heap_len;
         self.heap_up(self.heap_len);
         self.heap_len += 1;
     }
