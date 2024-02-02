@@ -61,12 +61,12 @@ fn App() -> impl IntoView {
                         view=move || view! { <DisplaySort sort=Sort::Insertion play update_ms items volume/> }
                     />
                     <Route
-                        path=Sort::Selection.route_as_str()
-                        view=move || view! { <DisplaySort sort=Sort::Selection play update_ms items volume/> }
-                    />
-                    <Route
                         path=Sort::Quick.route_as_str()
                         view=move || view! { <DisplaySort sort=Sort::Quick play update_ms items volume/> }
+                    />
+                    <Route
+                        path=Sort::Selection.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Selection play update_ms items volume/> }
                     />
                     <Route
                         path="/*"
@@ -119,17 +119,17 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
                 <li>
-                    <a href=Sort::Selection.route_as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == Sort::Selection.route_as_str() >
-                        <i class="bi bi-arrows-collapse-vertical me-2"></i>
-                        { Sort::Selection.name_as_str().to_string() }
-                    </a>
-                </li>
-                <li>
                     <a href=Sort::Quick.route_as_str() class="nav-link text-white"
                         class:bg-danger=move || location.pathname.get() == Sort::Quick.route_as_str() >
                         <i class="bi bi-vr me-2"></i>
                         { Sort::Quick.name_as_str().to_string() }
+                    </a>
+                </li>
+                <li>
+                    <a href=Sort::Selection.route_as_str() class="nav-link text-white"
+                        class:bg-danger=move || location.pathname.get() == Sort::Selection.route_as_str() >
+                        <i class="bi bi-arrows-collapse-vertical me-2"></i>
+                        { Sort::Selection.name_as_str().to_string() }
                     </a>
                 </li>
             </ul>
