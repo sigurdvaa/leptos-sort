@@ -7,6 +7,7 @@ use web_sys::{AudioContext, CanvasRenderingContext2d, OscillatorNode};
 mod bubble;
 mod heap;
 mod insertion;
+mod merge;
 mod quick;
 mod selection;
 
@@ -22,23 +23,20 @@ pub trait VisualSort {
     fn new(base: SortBase) -> Self
     where
         Self: Sized;
-
     fn done(&self) -> bool;
-
     fn draw(&mut self, ticks: usize);
-
     fn osc_stop(&self);
-
     fn update(&mut self);
 }
 
+#[derive(Copy, Clone)]
 pub enum Sort {
     Bubble,
     Heap,
     Insertion,
+    Merge,
     Quick,
     Selection,
-    // TODO: merge sort
 }
 
 impl Sort {
@@ -47,6 +45,7 @@ impl Sort {
             Self::Bubble => "Bubble Sort",
             Self::Heap => "Heapsort",
             Self::Insertion => "Insertion Sort",
+            Self::Merge => "Merge Sort",
             Self::Quick => "Quicksort",
             Self::Selection => "Selection Sort",
         }
@@ -57,6 +56,7 @@ impl Sort {
             Self::Bubble => "/bubble",
             Self::Heap => "/heap",
             Self::Insertion => "/insertion",
+            Self::Merge => "/merge",
             Self::Quick => "/quick",
             Self::Selection => "/selection",
         }
@@ -68,6 +68,7 @@ impl Sort {
             Self::Bubble => Box::new(bubble::Bubble::new(base)),
             Self::Heap => Box::new(heap::Heap::new(base)),
             Self::Insertion => Box::new(insertion::Insertion::new(base)),
+            Self::Merge => Box::new(merge::Merge::new(base)),
             Self::Quick => Box::new(quick::Quick::new(base)),
             Self::Selection => Box::new(selection::Selection::new(base)),
         }

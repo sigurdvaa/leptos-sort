@@ -61,6 +61,10 @@ fn App() -> impl IntoView {
                         view=move || view! { <DisplaySort sort=Sort::Insertion play update_ms items volume/> }
                     />
                     <Route
+                        path=Sort::Merge.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Merge play update_ms items volume/> }
+                    />
+                    <Route
                         path=Sort::Quick.route_as_str()
                         view=move || view! { <DisplaySort sort=Sort::Quick play update_ms items volume/> }
                     />
@@ -97,48 +101,33 @@ fn Sidebar() -> impl IntoView {
                         Home
                     </a>
                 </li>
-                <li>
-                    <a href=Sort::Bubble.route_as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == Sort::Bubble.route_as_str() >
-                        <i class="bi bi-chat me-2"></i>
-                        { Sort::Bubble.name_as_str().to_string() }
-                    </a>
-                </li>
-                <li>
-                    <a href=Sort::Heap.route_as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == Sort::Heap.route_as_str() >
-                        <i class="bi bi-diagram-2 me-2"></i>
-                        { Sort::Heap.name_as_str().to_string() }
-                    </a>
-                </li>
-                <li>
-                    <a href=Sort::Insertion.route_as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == Sort::Insertion.route_as_str() >
-                        <i class="bi bi-chevron-bar-left me-2"></i>
-                        { Sort::Insertion.name_as_str().to_string() }
-                    </a>
-                </li>
-                <li>
-                    <a href=Sort::Quick.route_as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == Sort::Quick.route_as_str() >
-                        <i class="bi bi-vr me-2"></i>
-                        { Sort::Quick.name_as_str().to_string() }
-                    </a>
-                </li>
-                <li>
-                    <a href=Sort::Selection.route_as_str() class="nav-link text-white"
-                        class:bg-danger=move || location.pathname.get() == Sort::Selection.route_as_str() >
-                        <i class="bi bi-arrows-collapse-vertical me-2"></i>
-                        { Sort::Selection.name_as_str().to_string() }
-                    </a>
-                </li>
+                <SidebarSortItem sort=Sort::Bubble icon="chat"/>
+                <SidebarSortItem sort=Sort::Heap icon="diagram-2"/>
+                <SidebarSortItem sort=Sort::Insertion icon="chevron-bar-left"/>
+                <SidebarSortItem sort=Sort::Merge icon="intersect"/>
+                <SidebarSortItem sort=Sort::Quick icon="vr"/>
+                <SidebarSortItem sort=Sort::Selection icon="arrows-collapse-vertical"/>
             </ul>
             <hr/>
-                <div class="text-secondary ps-3">
-                    <div>Sigtown <i class="bi bi-c-circle mx-2"></i> 2024</div>
-                    <a target="_blank" href="https://opensource.org/license/mit/" class="link link-secondary me-1">MIT Licensed</a>
-                </div>
+            <div class="text-secondary ps-3">
+                <div>Sigtown <i class="bi bi-c-circle mx-2"></i> 2024</div>
+                <a target="_blank" href="https://opensource.org/license/mit/" class="link link-secondary me-1">MIT Licensed</a>
+            </div>
         </div>
+    }
+}
+
+#[component]
+fn SidebarSortItem(sort: Sort, icon: &'static str) -> impl IntoView {
+    let location = use_location();
+    view! {
+        <li>
+            <a href=sort.route_as_str() class="nav-link text-white"
+                class:bg-danger=move || location.pathname.get() == sort.route_as_str() >
+                <i class={format!("bi bi-{icon} me-2")}></i>
+                { sort.name_as_str().to_string() }
+            </a>
+        </li>
     }
 }
 
