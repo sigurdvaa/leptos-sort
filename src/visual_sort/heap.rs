@@ -26,12 +26,11 @@ impl VisualSort for Heap {
     }
 
     fn draw(&mut self, ticks: usize) {
-        // TODO: move to sortbase?
         for _ in 0..ticks {
             self.update();
         }
 
-        let set_color = |done: bool, i: usize| {
+        self.base.draw(|done: bool, i: usize| {
             if !done && i == self.y {
                 BoostrapColor::Light.as_str()
             } else if !done && i == self.heap_len {
@@ -39,9 +38,7 @@ impl VisualSort for Heap {
             } else {
                 BoostrapColor::Red.as_str()
             }
-        };
-
-        self.base.draw(set_color);
+        });
     }
 
     fn osc_stop(&self) {
@@ -49,12 +46,10 @@ impl VisualSort for Heap {
     }
 
     fn update(&mut self) {
-        // use self.data as initial unsorted items, heap, and sorted array
-
+        // use self.base.data as initial unsorted items, heap, and sorted array
         // add items to heap
         if !self.heaped {
             if self.x < self.base.data.len() {
-                // TODO: if data len is greater than 450, the pitch is the same for all values
                 self.base.set_freq(self.base.data[self.x]);
                 self.push(self.base.data[self.x]);
                 self.x += 1;
@@ -64,8 +59,8 @@ impl VisualSort for Heap {
         }
 
         // remove max heap, and add to last pos in array
-        // TODO: visualize heapify?
         if let Some(v) = self.pop() {
+            // TODO: visualize heapify?
             self.base.set_freq(v);
             self.base.array_swap.update(|n| *n += 1);
             self.base.data[self.heap_len] = v;

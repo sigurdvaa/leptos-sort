@@ -28,7 +28,7 @@ impl VisualSort for Insertion {
             self.update();
         }
 
-        let set_color = |done: bool, i: usize| {
+        self.base.draw(|done: bool, i: usize| {
             if !done && self.inserting && self.y == i {
                 BoostrapColor::Light.as_str()
             } else if !done && self.x - 1 == i {
@@ -36,9 +36,7 @@ impl VisualSort for Insertion {
             } else {
                 BoostrapColor::Red.as_str()
             }
-        };
-
-        self.base.draw(set_color);
+        });
     }
 
     fn osc_stop(&self) {

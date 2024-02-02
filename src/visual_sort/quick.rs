@@ -47,7 +47,7 @@ impl VisualSort for Quick {
             None => (0, 0, self.base.data.len() - 1, 0),
         };
 
-        let set_color = |done: bool, i: usize| {
+        self.base.draw(|done: bool, i: usize| {
             if !done && (i == curr_hi || i == curr_lo) {
                 BoostrapColor::Green.as_str()
             } else if !done && (i == curr_pivot || i == curr_i) {
@@ -55,9 +55,7 @@ impl VisualSort for Quick {
             } else {
                 BoostrapColor::Red.as_str()
             }
-        };
-
-        self.base.draw(set_color);
+        });
     }
 
     fn osc_stop(&self) {

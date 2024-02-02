@@ -22,15 +22,13 @@ impl VisualSort for Bubble {
             self.update();
         }
 
-        let set_color = |done: bool, i: usize| {
+        self.base.draw(|done: bool, i: usize| {
             if !done && i == self.y + 1 {
                 BoostrapColor::Light.as_str()
             } else {
                 BoostrapColor::Red.as_str()
             }
-        };
-
-        self.base.draw(set_color);
+        });
     }
 
     fn osc_stop(&self) {

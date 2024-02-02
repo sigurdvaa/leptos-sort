@@ -28,7 +28,7 @@ impl VisualSort for Selection {
             self.update();
         }
 
-        let set_color = |done: bool, i: usize| {
+        self.base.draw(|done: bool, i: usize| {
             if !done && i == self.y {
                 BoostrapColor::Light.as_str()
             } else if !done && (i == self.x || i == self.s) {
@@ -36,9 +36,7 @@ impl VisualSort for Selection {
             } else {
                 BoostrapColor::Red.as_str()
             }
-        };
-
-        self.base.draw(set_color);
+        });
     }
 
     fn osc_stop(&self) {
