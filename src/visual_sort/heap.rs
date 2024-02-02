@@ -83,6 +83,9 @@ impl VisualSort for Heap {
         self.ctx2d
             .clear_rect(0.0, 0.0, self.canvas_w, self.canvas_h);
 
+        // TODO: once started, the canvas won't resize, move calculations outside loop
+        // TODO: refactor sorts, common funs should be in mod.rs
+        // TODO: make spacing dynamic based on items per pixel (no spacing if too many items)
         let spacing = 2.0;
         // how wide can one item be to for all items to fill the canvas, no spacing front or end
         let width =
@@ -94,9 +97,12 @@ impl VisualSort for Heap {
             // draw item inside canvas, with width and spacing, no spacing front or end
             let x = i as f64 * (width + spacing);
 
-            if !self.done && i == self.y + 1 {
+            if !self.done && i == self.x {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Light.as_str()));
+            } else if !self.done && i == self.heap_len {
+                self.ctx2d
+                    .set_fill_style(&JsValue::from(BoostrapColor::Green.as_str()));
             } else {
                 self.ctx2d
                     .set_fill_style(&JsValue::from(BoostrapColor::Red.as_str()));
@@ -123,12 +129,13 @@ impl VisualSort for Heap {
                 self.x += 1;
                 return;
             }
-            self.x = 0;
             self.heaped = true;
         }
 
         // remove max heap, and add to last pos in array
+        // TODO: visualize heapify?
         if let Some(v) = self.pop() {
+            self.array_swap.update(|n| *n += 1);
             self.data[self.heap_len] = v;
             return;
         }
@@ -155,7 +162,9 @@ impl Heap {
 
     fn heap_up(&mut self, i: usize) {
         if let Some(p) = self.parent(i) {
+            self.array_access.update(|n| *n += 1);
             if self.data[p] < self.data[i] {
+                self.array_swap.update(|n| *n += 1);
                 self.data.swap(p, i);
                 self.heap_up(p);
             }
@@ -170,16 +179,20 @@ impl Heap {
             return;
         }
 
+        self.array_access.update(|n| *n += 1);
         if self.data[l] > self.data[r] && self.data[i] <= self.data[l] {
+            self.array_swap.update(|n| *n += 1);
             self.data.swap(i, l);
             self.heap_down(l);
         } else if self.data[i] <= self.data[r] {
+            self.array_swap.update(|n| *n += 1);
             self.data.swap(i, r);
             self.heap_down(r);
         }
     }
 
     fn push(&mut self, value: usize) {
+        self.array_swap.update(|n| *n += 1);
         self.data[self.heap_len] = value;
         self.heap_up(self.heap_len);
         self.heap_len += 1;
