@@ -124,7 +124,7 @@ fn SidebarSortItem(sort: Sort, icon: &'static str) -> impl IntoView {
         <li>
             <a href=sort.route_as_str() class="nav-link text-white"
                 class:bg-danger=move || location.pathname.get() == sort.route_as_str() >
-                <i class={format!("bi bi-{icon} me-2")}></i>
+                <i class={ format!("bi bi-{icon} me-2") }></i>
                 { sort.name_as_str().to_string() }
             </a>
         </li>
