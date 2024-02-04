@@ -1,16 +1,19 @@
 use crate::visual_sort::SortBase;
 use crate::{BoostrapColor, VisualSort};
-// use leptos::*;
+use leptos::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Clone)]
 struct MergeState {
-    left: Vec<usize>,
-    right: Vec<usize>,
+    arr: Rc<RefCell<Vec<usize>>>,
+    arr_l: Rc<RefCell<Vec<usize>>>,
+    arr_r: Rc<RefCell<Vec<usize>>>,
     l: usize,
     r: usize,
+    s: usize,
     sorted: bool,
+    start_i: usize,
 }
 
 pub struct Merge {
@@ -20,18 +23,21 @@ pub struct Merge {
 
 impl VisualSort for Merge {
     fn new(base: SortBase) -> Self {
-        let len = base.data.len();
-        let mid = len / 2;
-        let left = (0..mid).collect();
-        let right = (mid..len).collect();
+        let arr = Rc::new(RefCell::new(base.data.clone()));
+        let mid = arr.borrow().len() / 2;
+        let arr_l = Rc::new(RefCell::new(arr.borrow()[..mid].to_owned()));
+        let arr_r = Rc::new(RefCell::new(arr.borrow()[mid..].to_owned()));
         Self {
             base,
             stack: vec![MergeState {
-                left,
-                right,
+                arr,
+                arr_l,
+                arr_r,
                 l: 0,
                 r: 0,
+                s: 0,
                 sorted: false,
+                start_i: 0,
             }],
         }
     }
@@ -45,8 +51,23 @@ impl VisualSort for Merge {
             self.update();
         }
 
-        self.base
-            .draw(|_done: bool, _i: usize| BoostrapColor::Red.as_str());
+        match self.stack.last() {
+            None => self
+                .base
+                .draw(|_done: bool, _i: usize| BoostrapColor::Red.as_str()),
+            Some(state) => self.base.draw(move |done: bool, i: usize| {
+                if !done && i == (state.start_i + state.s).saturating_sub(1) {
+                    BoostrapColor::Light.as_str()
+                } else if !done
+                    && (i == state.start_i
+                        || i == state.start_i + state.arr.borrow().len().saturating_sub(1))
+                {
+                    BoostrapColor::Green.as_str()
+                } else {
+                    BoostrapColor::Red.as_str()
+                }
+            }),
+        }
     }
 
     fn osc_stop(&self) {
@@ -55,126 +76,90 @@ impl VisualSort for Merge {
 
     fn update(&mut self) {
         while let Some(mut state) = self.stack.pop() {
-            if state.left.is_empty() || state.right.is_empty() {
+            if state.arr.borrow().len() <= 1 {
                 continue;
             }
-            log::info!("state: left: {:?} right {:?}", state.left, state.right);
 
             if !state.sorted {
-                let (state_l, state_r) = self.split_state(&state);
+                let (left, right) = self.split_state(&state);
                 state.sorted = true;
                 self.stack.push(state);
-                self.stack.push(state_r);
-                self.stack.push(state_l);
+                self.stack.push(right);
+                self.stack.push(left);
                 continue;
             }
 
-            let data = &mut self.base.data;
-            while state.l < state.left.len() && state.r < state.right.len() {
-                let l = state.left[state.l];
-                let r = state.right[state.r];
-                log::info!("cmp indexes {} and {}", l, r);
-                if data[l] > data[r] {
-                    log::info!("swapping {:?} and {:?}", data[l], data[r]);
-                    data.swap(l, r);
-                    // data.swap(l, r);
-                    // state.r += 1;
-                    // state.l += 1;
+            // scope for refcell borrow
+            {
+                let mut arr = state.arr.borrow_mut();
+                let arr_l = state.arr_l.borrow();
+                let arr_r = state.arr_r.borrow();
+                if state.l < arr_l.len() && state.r < arr_r.len() {
+                    self.base.array_access.update(|n| *n += 1);
+                    self.base.array_swap.update(|n| *n += 1);
+                    if arr_l[state.l] < arr_r[state.r] {
+                        arr[state.l + state.r] = arr_l[state.l];
+                        state.l += 1;
+                    } else {
+                        arr[state.l + state.r] = arr_r[state.r];
+                        state.r += 1;
+                    }
+                } else if state.l < arr_l.len() {
+                    self.base.array_swap.update(|n| *n += 1);
+                    arr[state.l + state.r] = arr_l[state.l];
+                    state.l += 1;
+                } else if state.r < arr_r.len() {
+                    self.base.array_swap.update(|n| *n += 1);
+                    arr[state.l + state.r] = arr_r[state.r];
+                    state.r += 1;
                 }
-                state.l += 1;
+            }
+
+            if state.s < state.arr.borrow().len() {
+                let value = state.arr.borrow()[state.s];
+                self.base.set_freq(value);
+                self.base.data[state.start_i + state.s] = value;
+                state.s += 1;
+                self.stack.push(state);
+                return;
             }
         }
-
         self.base.done = true;
     }
 }
 
 impl Merge {
     fn split_state(&self, state: &MergeState) -> (MergeState, MergeState) {
-        let mid = state.left.len() / 2;
-        let left = state.left[..mid].to_owned();
-        let right = state.left[mid..].to_owned();
-        let state_l = MergeState {
-            left,
-            right,
+        let arr = state.arr_l.clone();
+        let mid = arr.borrow().len() / 2;
+        let arr_l = Rc::new(RefCell::new(arr.borrow()[..mid].to_owned()));
+        let arr_r = Rc::new(RefCell::new(arr.borrow()[mid..].to_owned()));
+        let left = MergeState {
+            arr,
+            arr_l,
+            arr_r,
             l: 0,
             r: 0,
+            s: 0,
             sorted: false,
+            start_i: state.start_i,
         };
 
-        let mid = state.right.len() / 2;
-        let left = state.right[..mid].to_owned();
-        let right = state.right[mid..].to_owned();
-        let state_r = MergeState {
-            left,
-            right,
+        let arr = state.arr_r.clone();
+        let mid = arr.borrow().len() / 2;
+        let arr_l = Rc::new(RefCell::new(arr.borrow()[..mid].to_owned()));
+        let arr_r = Rc::new(RefCell::new(arr.borrow()[mid..].to_owned()));
+        let right = MergeState {
+            arr,
+            arr_l,
+            arr_r,
             l: 0,
             r: 0,
+            s: 0,
             sorted: false,
+            start_i: state.start_i + state.arr_l.borrow().len(),
         };
 
-        (state_l, state_r)
+        (left, right)
     }
 }
-
-// impl Merge {
-//     fn merge_sort(&mut self, arr: &'a mut [usize]) {
-//         // base case
-//         if arr.len() <= 1 {
-//             return;
-//         }
-//
-//         // split arr in two
-//         let mid = arr.len() / 2;
-//         let mut arr_l = arr[..mid].to_owned();
-//         let mut arr_r = arr[mid..].to_owned();
-//
-//         // sort sub arrays
-//         self.merge_sort(&mut arr_l);
-//         self.merge_sort(&mut arr_r);
-//
-//         // merge
-//         self.merge_join(arr, &arr_l, &arr_r);
-//     }
-//     fn merge_join(&mut self, arr: &mut [usize], arr_l: &[usize], arr_r: &[usize]) {
-//         let mut l = 0;
-//         let mut r = 0;
-//
-//         while l < arr_l.len() && r < arr_r.len() {
-//             if arr_l[l] < arr_r[r] {
-//                 arr[l + r] = arr_l[l];
-//                 l += 1;
-//             } else {
-//                 arr[l + r] = arr_r[r];
-//                 r += 1;
-//             }
-//         }
-//
-//         while l < arr_l.len() {
-//             arr[l + r] = arr_l[l];
-//             l += 1;
-//         }
-//
-//         while r < arr_r.len() {
-//             arr[l + r] = arr_r[r];
-//             r += 1;
-//         }
-//     }
-// }
-
-/*
-        [8,6,6,9,5]
-        [5,6,6,8,9]
-
-         0 1 2 3 4
-        [8,6,6,9,5]
-        [8,6,6,5,9] -1
-        [6,8,6,5,9] -2
-        [6,8,5,6,9] -3
-      [0,1]-2  [2,3,4]-3  4
-    [0]  [1]   [2]  [3,4]-1
-                   [3] [4]
-
-
-
-*/
