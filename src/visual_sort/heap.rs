@@ -4,8 +4,9 @@ use leptos::*;
 
 pub struct Heap {
     base: SortBase,
-    heaped: bool,
     heap_len: usize,
+    heapifying_down: bool,
+    heapifying_up: bool,
     x: usize,
     y: usize,
 }
@@ -14,8 +15,9 @@ impl VisualSort for Heap {
     fn new(base: SortBase) -> Self {
         Self {
             base,
-            heaped: false,
             heap_len: 0,
+            heapifying_down: false,
+            heapifying_up: false,
             x: 0,
             y: 0,
         }
@@ -47,20 +49,25 @@ impl VisualSort for Heap {
 
     fn update(&mut self) {
         // use self.base.data as initial unsorted items, heap, and sorted array
-        // add items to heap
-        if !self.heaped {
-            if self.x < self.base.data.len() {
-                self.base.set_freq(self.base.data[self.x]);
-                self.push(self.base.data[self.x]);
-                self.x += 1;
-                return;
-            }
-            self.heaped = true;
+        if self.heapifying_up {
+            self.heap_up(self.y);
+            return;
+        }
+
+        if self.x < self.base.data.len() {
+            self.base.set_freq(self.base.data[self.x]);
+            self.push(self.base.data[self.x]);
+            self.x += 1;
+            return;
+        }
+
+        if self.heapifying_down {
+            self.heap_down(self.y);
+            return;
         }
 
         // remove max heap, and add to last pos in array
         if let Some(v) = self.pop() {
-            // TODO: visualize heapify?
             self.base.set_freq(v);
             self.base.array_swap.update(|n| *n += 1);
             self.base.data[self.heap_len] = v;
@@ -93,18 +100,21 @@ impl Heap {
             if self.base.data[p] < self.base.data[i] {
                 self.base.array_swap.update(|n| *n += 1);
                 self.base.data.swap(p, i);
-                self.heap_up(p);
+                // self.heap_up(p);
+                self.heapifying_up = true;
                 self.y = p;
+                return;
             }
         }
+        self.heapifying_up = false;
     }
 
     fn heap_down(&mut self, i: usize) {
-        self.y = i;
+        self.heapifying_down = false;
         let l = self.left_child(i);
         let r = self.right_child(i);
 
-        if r > self.heap_len {
+        if l >= self.heap_len || r >= self.heap_len {
             return;
         }
 
@@ -112,11 +122,15 @@ impl Heap {
         if self.base.data[l] > self.base.data[r] && self.base.data[i] <= self.base.data[l] {
             self.base.array_swap.update(|n| *n += 1);
             self.base.data.swap(i, l);
-            self.heap_down(l);
+            // self.heap_down(l);
+            self.heapifying_down = true;
+            self.y = l;
         } else if self.base.data[i] <= self.base.data[r] {
             self.base.array_swap.update(|n| *n += 1);
             self.base.data.swap(i, r);
-            self.heap_down(r);
+            // self.heap_down(r);
+            self.heapifying_down = true;
+            self.y = r;
         }
     }
 
@@ -133,10 +147,11 @@ impl Heap {
             return None;
         }
 
-        let val = Some(self.base.data[0]);
+        let value = Some(self.base.data[0]);
         self.heap_len -= 1;
         self.base.data[0] = self.base.data[self.heap_len];
+        self.y = 0;
         self.heap_down(0);
-        val
+        value
     }
 }
