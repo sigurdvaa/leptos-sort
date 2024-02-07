@@ -114,18 +114,23 @@ impl Heap {
         let l = self.left_child(i);
         let r = self.right_child(i);
 
+        self.base.array_access.update(|n| *n += 1);
         if l >= self.heap_len || r >= self.heap_len {
+            if l < self.heap_len && self.base.data[i] < self.base.data[l] {
+                self.base.array_swap.update(|n| *n += 1);
+                self.base.data.swap(i, l);
+            }
             return;
         }
 
         self.base.array_access.update(|n| *n += 1);
-        if self.base.data[l] > self.base.data[r] && self.base.data[i] <= self.base.data[l] {
+        if self.base.data[l] > self.base.data[r] && self.base.data[i] < self.base.data[l] {
             self.base.array_swap.update(|n| *n += 1);
             self.base.data.swap(i, l);
             // self.heap_down(l);
             self.heapifying_down = true;
             self.y = l;
-        } else if self.base.data[i] <= self.base.data[r] {
+        } else if self.base.data[i] < self.base.data[r] {
             self.base.array_swap.update(|n| *n += 1);
             self.base.data.swap(i, r);
             // self.heap_down(r);
@@ -152,6 +157,7 @@ impl Heap {
         self.base.data[0] = self.base.data[self.heap_len];
         self.y = 0;
         self.heap_down(0);
+        log::info!("len: {}, value: {value:?}", self.heap_len);
         value
     }
 }
