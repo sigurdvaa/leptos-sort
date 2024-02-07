@@ -49,11 +49,20 @@ impl VisualSort for Heap {
 
     fn update(&mut self) {
         // use self.base.data as initial unsorted items, heap, and sorted array
+
+        // visualizing recursive heapify up
         if self.heapifying_up {
             self.heap_up(self.y);
             return;
         }
 
+        // visualizing recursive heapify down
+        if self.heapifying_down {
+            self.heap_down(self.y);
+            return;
+        }
+
+        // insert data to heap
         if self.x < self.base.data.len() {
             self.base.set_freq(self.base.data[self.x]);
             self.push(self.base.data[self.x]);
@@ -61,12 +70,7 @@ impl VisualSort for Heap {
             return;
         }
 
-        if self.heapifying_down {
-            self.heap_down(self.y);
-            return;
-        }
-
-        // remove max heap, and add to last pos in array
+        // remove max from heap and insert to front of data (back of heap)
         if let Some(v) = self.pop() {
             self.base.set_freq(v);
             self.base.array_swap.update(|n| *n += 1);
@@ -100,7 +104,6 @@ impl Heap {
             if self.base.data[p] < self.base.data[i] {
                 self.base.array_swap.update(|n| *n += 1);
                 self.base.data.swap(p, i);
-                // self.heap_up(p);
                 self.heapifying_up = true;
                 self.y = p;
                 return;
@@ -111,31 +114,26 @@ impl Heap {
 
     fn heap_down(&mut self, i: usize) {
         self.heapifying_down = false;
+        let data = &self.base.data;
         let l = self.left_child(i);
         let r = self.right_child(i);
+        let mut largest = i;
 
         self.base.array_access.update(|n| *n += 1);
-        if l >= self.heap_len || r >= self.heap_len {
-            if l < self.heap_len && self.base.data[i] < self.base.data[l] {
-                self.base.array_swap.update(|n| *n += 1);
-                self.base.data.swap(i, l);
-            }
-            return;
+        if l < self.heap_len && data[l] > data[largest] {
+            largest = l;
         }
 
         self.base.array_access.update(|n| *n += 1);
-        if self.base.data[l] > self.base.data[r] && self.base.data[i] < self.base.data[l] {
+        if r < self.heap_len && data[r] > data[largest] {
+            largest = r;
+        }
+
+        if largest != i {
             self.base.array_swap.update(|n| *n += 1);
-            self.base.data.swap(i, l);
-            // self.heap_down(l);
+            self.base.data.swap(i, largest);
             self.heapifying_down = true;
-            self.y = l;
-        } else if self.base.data[i] < self.base.data[r] {
-            self.base.array_swap.update(|n| *n += 1);
-            self.base.data.swap(i, r);
-            // self.heap_down(r);
-            self.heapifying_down = true;
-            self.y = r;
+            self.y = largest;
         }
     }
 
@@ -157,7 +155,6 @@ impl Heap {
         self.base.data[0] = self.base.data[self.heap_len];
         self.y = 0;
         self.heap_down(0);
-        log::info!("len: {}, value: {value:?}", self.heap_len);
         value
     }
 }
