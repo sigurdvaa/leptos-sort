@@ -4,13 +4,27 @@ use leptos::*;
 
 pub struct Radix {
     base: SortBase,
+    count: [usize; 10],
+    counted: bool,
+    max: usize,
+    maxed: bool,
+    v: usize,
     x: usize,
-    y: usize,
+    radix: usize,
 }
 
 impl VisualSort for Radix {
     fn new(base: SortBase) -> Self {
-        Self { base, x: 0, y: 0 }
+        Self {
+            base,
+            count: [0; 10],
+            counted: false,
+            max: 0,
+            maxed: false,
+            v: 0,
+            x: 0,
+            radix: 0,
+        }
     }
 
     fn done(&self) -> bool {
@@ -23,9 +37,12 @@ impl VisualSort for Radix {
         }
 
         self.base.draw(|done: bool, i: usize| {
-            // TODO
-            if !done && i == self.y + 1 {
-                BoostrapColor::Light.as_str()
+            if !done && i == self.x.saturating_sub(1) {
+                if !self.maxed || !self.counted {
+                    BoostrapColor::Light.as_str()
+                } else {
+                    BoostrapColor::Green.as_str()
+                }
             } else {
                 BoostrapColor::Red.as_str()
             }
@@ -37,6 +54,55 @@ impl VisualSort for Radix {
     }
 
     fn update(&mut self) {
-        // TODO
+        // find max value
+        if !self.maxed {
+            self.base.array_access.update(|n| *n += 1);
+            if self.base.data[self.x] > self.max {
+                self.max = self.base.data[self.x];
+                self.base.set_freq(self.max);
+            }
+            self.x += 1;
+            if self.x < self.base.data.len() {
+                return;
+            }
+            self.x = 0;
+            self.maxed = true;
+        }
+
+        // count values from 0 to max
+        if !self.counted {
+            self.base.array_access.update(|n| *n += 1);
+            self.count[(self.base.data[self.x] >> self.radix) % 10] += 1;
+            self.base.set_freq(self.base.data[self.x]);
+            self.x += 1;
+            if self.x < self.base.data.len() {
+                return;
+            }
+            self.x = 0;
+            self.counted = true;
+        }
+
+        // update data based on count results
+        if self.x < self.base.data.len() {
+            while self.v < self.count.len() && self.count[self.v] == 0 {
+                self.base.array_access.update(|n| *n += 1);
+                self.v += 1;
+            }
+            self.count[self.v] -= 1;
+            self.base.array_swap.update(|n| *n += 1);
+            self.base.data[self.x] = self.v;
+            self.base.set_freq(self.v);
+            self.x += 1;
+            return;
+        }
+
+        // done if radix * 10 > max
+        if 10 << self.radix > self.max {
+            self.base.done = true;
+        } else {
+            self.x = 0;
+            self.counted = false;
+            self.radix += 1;
+        }
     }
 }
