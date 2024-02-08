@@ -1,5 +1,5 @@
-use crate::visual_sort::SortBase;
-use crate::{BoostrapColor, VisualSort};
+use super::{SortBase, VisualSort};
+use crate::BoostrapColor;
 use leptos::*;
 
 pub struct Heap {

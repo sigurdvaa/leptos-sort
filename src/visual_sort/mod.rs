@@ -1,18 +1,19 @@
-use leptos::html::Canvas;
 use leptos::*;
 use rand::prelude::SliceRandom;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{AudioContext, CanvasRenderingContext2d, OscillatorNode};
 
 mod bubble;
+mod counting;
 mod heap;
 mod insertion;
 mod merge;
 mod quick;
+mod radix;
 mod selection;
 
 pub struct SortParams<'a> {
-    pub canvas_ref: &'a NodeRef<Canvas>,
+    pub canvas_ref: &'a NodeRef<html::Canvas>,
     pub items: usize,
     pub volume: RwSignal<f32>,
     pub array_access: RwSignal<usize>,
@@ -32,9 +33,11 @@ pub trait VisualSort {
 #[derive(Copy, Clone)]
 pub enum Sort {
     Bubble,
+    Counting,
     Heap,
     Insertion,
     Merge,
+    Radix,
     Quick,
     Selection,
 }
@@ -43,9 +46,11 @@ impl Sort {
     pub fn name_as_str(&self) -> &'static str {
         match self {
             Self::Bubble => "Bubble Sort",
+            Self::Counting => "Counting Sort",
             Self::Heap => "Heapsort",
             Self::Insertion => "Insertion Sort",
             Self::Merge => "Merge Sort",
+            Self::Radix => "Radix Sort",
             Self::Quick => "Quicksort",
             Self::Selection => "Selection Sort",
         }
@@ -54,9 +59,11 @@ impl Sort {
     pub fn route_as_str(&self) -> &'static str {
         match self {
             Self::Bubble => "/bubble",
+            Self::Counting => "/counting",
             Self::Heap => "/heap",
             Self::Insertion => "/insertion",
             Self::Merge => "/merge",
+            Self::Radix => "/radix",
             Self::Quick => "/quick",
             Self::Selection => "/selection",
         }
@@ -66,9 +73,11 @@ impl Sort {
         let base = SortBase::new(params);
         match self {
             Self::Bubble => Box::new(bubble::Bubble::new(base)),
+            Self::Counting => Box::new(counting::Counting::new(base)),
             Self::Heap => Box::new(heap::Heap::new(base)),
             Self::Insertion => Box::new(insertion::Insertion::new(base)),
             Self::Merge => Box::new(merge::Merge::new(base)),
+            Self::Radix => Box::new(radix::Radix::new(base)),
             Self::Quick => Box::new(quick::Quick::new(base)),
             Self::Selection => Box::new(selection::Selection::new(base)),
         }

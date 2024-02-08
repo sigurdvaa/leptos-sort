@@ -53,6 +53,10 @@ fn App() -> impl IntoView {
                         view=move || view! { <DisplaySort sort=Sort::Bubble play update_ms items volume/> }
                     />
                     <Route
+                        path=Sort::Counting.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Counting play update_ms items volume/> }
+                    />
+                    <Route
                         path=Sort::Heap.route_as_str()
                         view=move || view! { <DisplaySort sort=Sort::Heap play update_ms items volume/> }
                     />
@@ -63,6 +67,10 @@ fn App() -> impl IntoView {
                     <Route
                         path=Sort::Merge.route_as_str()
                         view=move || view! { <DisplaySort sort=Sort::Merge play update_ms items volume/> }
+                    />
+                    <Route
+                        path=Sort::Radix.route_as_str()
+                        view=move || view! { <DisplaySort sort=Sort::Radix play update_ms items volume/> }
                     />
                     <Route
                         path=Sort::Quick.route_as_str()
@@ -102,9 +110,11 @@ fn Sidebar() -> impl IntoView {
                     </a>
                 </li>
                 <SidebarSortItem sort=Sort::Bubble icon="chat"/>
+                <SidebarSortItem sort=Sort::Counting icon="list-ol"/>
                 <SidebarSortItem sort=Sort::Heap icon="diagram-2"/>
                 <SidebarSortItem sort=Sort::Insertion icon="chevron-bar-left"/>
                 <SidebarSortItem sort=Sort::Merge icon="intersect"/>
+                <SidebarSortItem sort=Sort::Radix icon="flower2"/>
                 <SidebarSortItem sort=Sort::Quick icon="vr"/>
                 <SidebarSortItem sort=Sort::Selection icon="arrows-collapse-vertical"/>
             </ul>
