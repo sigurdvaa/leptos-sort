@@ -8,22 +8,25 @@ pub struct Radix {
     counted: bool,
     max: usize,
     maxed: bool,
-    v: usize,
+    y: usize,
     x: usize,
-    radix: usize,
+    radix: u32,
+    tmp_data: Vec<usize>,
 }
 
 impl VisualSort for Radix {
     fn new(base: SortBase) -> Self {
+        let tmp_data = base.data.clone();
         Self {
             base,
             count: [0; 10],
             counted: false,
             max: 0,
             maxed: false,
-            v: 0,
+            y: 0,
             x: 0,
             radix: 0,
+            tmp_data,
         }
     }
 
@@ -72,7 +75,9 @@ impl VisualSort for Radix {
         // count values from 0 to max
         if !self.counted {
             self.base.array_access.update(|n| *n += 1);
-            self.count[(self.base.data[self.x] >> self.radix) % 10] += 1;
+            let value = self.base.data[self.x];
+            let base = value / 10_usize.pow(self.radix) % 10;
+            self.count[base] += 1;
             self.base.set_freq(self.base.data[self.x]);
             self.x += 1;
             if self.x < self.base.data.len() {
@@ -80,29 +85,35 @@ impl VisualSort for Radix {
             }
             self.x = 0;
             self.counted = true;
+            for i in (0..self.count.len() - 1).rev() {
+                self.count[i] += self.count[i + 1];
+            }
         }
 
         // update data based on count results
-        if self.x < self.base.data.len() {
-            while self.v < self.count.len() && self.count[self.v] == 0 {
-                self.base.array_access.update(|n| *n += 1);
-                self.v += 1;
-            }
-            self.count[self.v] -= 1;
+        if self.y < self.tmp_data.len() {
+            let value = self.tmp_data[self.y];
+            let base = value / 10_usize.pow(self.radix) % 10;
+            let i = self.tmp_data.len() - self.count[base];
+            self.count[base] -= 1;
             self.base.array_swap.update(|n| *n += 1);
-            self.base.data[self.x] = self.v;
-            self.base.set_freq(self.v);
-            self.x += 1;
+            self.base.data[i] = value;
+            self.base.set_freq(value);
+            self.x = i;
+            self.y += 1;
             return;
         }
 
-        // done if radix * 10 > max
-        if 10 << self.radix > self.max {
-            self.base.done = true;
-        } else {
+        // done if max < 10^radix
+        if self.max >= 10_usize.pow(self.radix + 1) {
             self.x = 0;
+            self.y = 0;
+            self.count = [0; 10];
             self.counted = false;
             self.radix += 1;
+            self.tmp_data = self.base.data.clone();
+        } else {
+            self.base.done = true
         }
     }
 }
