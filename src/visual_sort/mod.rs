@@ -103,13 +103,13 @@ impl SortBase {
         let mut rng = rand::thread_rng();
         let mut data: Vec<usize> = (1..=params.items).collect();
         data.shuffle(&mut rng);
+        let len = data.len() as f64;
 
         let canvas = params
             .canvas_ref
             .get_untracked()
             .expect("canvas should exist");
-        let canvas_w =
-            (canvas.client_width() as f64 / data.len() as f64).floor() * data.len() as f64;
+        let canvas_w = (canvas.client_width() as f64 / len) * len;
         let canvas_h = canvas.client_height() as f64;
         canvas.set_width(canvas_w as u32);
         canvas.set_height(canvas_h as u32);
@@ -135,15 +135,11 @@ impl SortBase {
         create_effect(move |_| audio_gain.gain().set_value(params.volume.get()));
 
         // no spacing if low pixel per item
-        let spacing = if canvas_w / data.len() as f64 > 4.0 {
-            2.0
-        } else {
-            0.0
-        };
+        let spacing = if canvas_w / len > 4.0 { 2.0 } else { 0.0 };
 
         // how wide can one item be to for all items to fill the canvas, no spacing front or end
-        let col_width = (canvas_w + spacing - (spacing * data.len() as f64)) / data.len() as f64;
-        let col_height_pct = canvas_h / data.len() as f64;
+        let col_width = (canvas_w + spacing - (spacing * len)) / len;
+        let col_height_pct = canvas_h / len;
 
         Self {
             array_access: params.array_access,

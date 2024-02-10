@@ -93,10 +93,10 @@ fn App() -> impl IntoView {
 #[component]
 fn Sidebar() -> impl IntoView {
     let location = use_location();
-
     view! {
         <div class="d-flex flex-column flex-shrink-0 p-3" style="width: 260px;">
-            <a href="/" class="d-flex align-items-center ms-3 mb-3 mb-md-0 me-md-auto text-decoration-none">
+            <a href="/"
+                class="d-flex align-items-center ms-3 mb-3 mb-md-0 me-md-auto text-decoration-none">
                 <i class="bi bi-filter fs-3 me-2 text-danger"></i>
                 <span class="fs-4 text-danger">VisualSort</span>
             </a>
@@ -121,7 +121,10 @@ fn Sidebar() -> impl IntoView {
             <hr/>
             <div class="text-secondary ps-3">
                 <div>Sigtown <i class="bi bi-c-circle mx-2"></i> 2024</div>
-                <a target="_blank" href="https://opensource.org/license/mit/" class="link link-secondary me-1">MIT Licensed</a>
+                <a target="_blank" href="https://opensource.org/license/mit/"
+                    class="link link-secondary me-1">
+                    MIT Licensed
+                </a>
             </div>
         </div>
     }
@@ -279,7 +282,7 @@ fn Controls(
                 class:border-success=move || !play.get()
                 class:border-secondary=move || play.get()>
                 <label class="text-muted me-2">"Items: "{move || items.get()}</label>
-                <input type="range" class="form-range" min="1" max="1000" step="1"
+                <input type="range" class="form-range" min="1" max="5000" step="1"
                     disabled=move || play.get()
                     prop:value=items.get_untracked()
                     on:input=move |ev| items.set(event_target_value(&ev).parse().expect("integer"))/>
