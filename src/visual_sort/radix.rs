@@ -91,8 +91,10 @@ impl VisualSort for Radix {
 
         // update data based on count results
         if self.y < self.tmp_data.len() {
+            self.base.array_access.update(|n| *n += 1);
             let value = self.tmp_data[self.y];
             let base = value / 10_usize.pow(self.radix) % 10;
+            self.base.array_access.update(|n| *n += 1);
             let i = self.tmp_data.len() - self.count[base];
             self.count[base] -= 1;
             self.base.array_swap.update(|n| *n += 1);
