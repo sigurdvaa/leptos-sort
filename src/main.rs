@@ -174,6 +174,7 @@ fn DisplaySort(
         if sorter_holder.is_none() {
             array_access.set(0);
             array_swap.set(0);
+            array_cmp.set(0);
             let params = SortParams {
                 canvas_ref: &canvas_ref,
                 items: items.get_untracked(),
