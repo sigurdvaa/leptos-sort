@@ -73,7 +73,8 @@ impl VisualSort for Quick {
 
         // find all less or equal to pivot, return on tick
         for i in state.i..state.hi {
-            self.base.array_access.update(|n| *n += 1);
+            self.base.array_access.update(|n| *n += 2);
+            self.base.array_cmp.update(|n| *n += 1);
             if self.base.data[i] <= self.base.data[state.hi] {
                 self.base.array_swap.update(|n| *n += 1);
                 self.base.data.swap(i, state.pivot);

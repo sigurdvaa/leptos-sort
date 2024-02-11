@@ -54,6 +54,7 @@ impl VisualSort for Counting {
         // find max value
         if !self.maxed {
             self.base.array_access.update(|n| *n += 1);
+            self.base.array_cmp.update(|n| *n += 1);
             if self.base.data[self.x] > self.max {
                 self.max = self.base.data[self.x];
                 self.base.set_freq(self.max);
@@ -69,7 +70,7 @@ impl VisualSort for Counting {
 
         // count values from 0 to max
         if !self.counted {
-            self.base.array_access.update(|n| *n += 1);
+            self.base.array_access.update(|n| *n += 2);
             self.count[self.base.data[self.x]] += 1;
             self.base.set_freq(self.base.data[self.x]);
             self.x += 1;
@@ -82,12 +83,15 @@ impl VisualSort for Counting {
 
         // update data based on count results
         if self.x < self.base.data.len() {
+            self.base.array_access.update(|n| *n += 1);
+            self.base.array_cmp.update(|n| *n += 1);
             while self.v < self.count.len() && self.count[self.v] == 0 {
                 self.base.array_access.update(|n| *n += 1);
+                self.base.array_cmp.update(|n| *n += 1);
                 self.v += 1;
             }
+            self.base.array_swap.update(|n| *n += 2);
             self.count[self.v] -= 1;
-            self.base.array_swap.update(|n| *n += 1);
             self.base.data[self.x] = self.v;
             self.base.set_freq(self.v);
             self.x += 1;

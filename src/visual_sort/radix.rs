@@ -59,6 +59,7 @@ impl VisualSort for Radix {
         // find max value
         if !self.maxed {
             self.base.array_access.update(|n| *n += 1);
+            self.base.array_cmp.update(|n| *n += 1);
             if self.base.data[self.x] > self.max {
                 self.max = self.base.data[self.x];
                 self.base.set_freq(self.max);
@@ -74,6 +75,7 @@ impl VisualSort for Radix {
         // count values from 0 to max
         if !self.counted {
             self.base.array_access.update(|n| *n += 1);
+            self.base.array_swap.update(|n| *n += 1);
             let value = self.base.data[self.x];
             let base = value / 10_usize.pow(self.radix) % 10;
             self.count[base] += 1;
@@ -85,19 +87,19 @@ impl VisualSort for Radix {
             self.x = 0;
             self.counted = true;
             for i in (0..self.count.len() - 1).rev() {
+                self.base.array_swap.update(|n| *n += 1);
                 self.count[i] += self.count[i + 1];
             }
         }
 
         // update data based on count results
         if self.y < self.tmp_data.len() {
-            self.base.array_access.update(|n| *n += 1);
+            self.base.array_access.update(|n| *n += 2);
             let value = self.tmp_data[self.y];
             let base = value / 10_usize.pow(self.radix) % 10;
-            self.base.array_access.update(|n| *n += 1);
             let i = self.tmp_data.len() - self.count[base];
+            self.base.array_swap.update(|n| *n += 2);
             self.count[base] -= 1;
-            self.base.array_swap.update(|n| *n += 1);
             self.base.data[i] = value;
             self.base.set_freq(value);
             self.x = i;
@@ -106,6 +108,7 @@ impl VisualSort for Radix {
         }
 
         // done if max < 10^radix
+        self.base.array_cmp.update(|n| *n += 1);
         if self.max >= 10_usize.pow(self.radix + 1) {
             self.x = 0;
             self.y = 0;

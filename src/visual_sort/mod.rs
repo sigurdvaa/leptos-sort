@@ -34,6 +34,7 @@ pub struct SortParams<'a> {
     pub volume: RwSignal<f32>,
     pub array_access: RwSignal<usize>,
     pub array_swap: RwSignal<usize>,
+    pub array_cmp: RwSignal<usize>,
 }
 
 pub trait VisualSort {
@@ -103,6 +104,7 @@ impl Sort {
 pub struct SortBase {
     array_access: RwSignal<usize>,
     array_swap: RwSignal<usize>,
+    array_cmp: RwSignal<usize>,
     canvas_h: f64,
     canvas_w: f64,
     ctx2d: CanvasRenderingContext2d,
@@ -160,6 +162,7 @@ impl SortBase {
         Self {
             array_access: params.array_access,
             array_swap: params.array_swap,
+            array_cmp: params.array_cmp,
             canvas_h,
             canvas_w,
             ctx2d,

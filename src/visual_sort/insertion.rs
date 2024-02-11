@@ -46,7 +46,8 @@ impl VisualSort for Insertion {
         if self.inserting {
             if self.y > 0 {
                 let i = self.y - 1;
-                self.base.array_access.update(|n| *n += 1);
+                self.base.array_access.update(|n| *n += 2);
+                self.base.array_cmp.update(|n| *n += 1);
                 if self.base.data[self.y] < self.base.data[i] {
                     self.base.array_swap.update(|n| *n += 1);
                     self.base.data.swap(self.y, i);
@@ -60,10 +61,11 @@ impl VisualSort for Insertion {
         for x in self.x..self.base.data.len() {
             self.x = x;
             let i = x - 1;
-            self.base.array_access.update(|n| *n += 1);
+            self.base.array_access.update(|n| *n += 2);
+            self.base.array_cmp.update(|n| *n += 1);
             if self.base.data[x] < self.base.data[i] {
-                self.base.data.swap(x, i);
                 self.base.array_swap.update(|n| *n += 1);
+                self.base.data.swap(x, i);
                 self.base.set_freq(self.base.data[i]);
                 self.x = x + 1;
                 self.inserting = true;

@@ -154,6 +154,7 @@ fn DisplaySort(
 
     let array_access = create_rw_signal(0);
     let array_swap = create_rw_signal(0);
+    let array_cmp = create_rw_signal(0);
 
     let sort_name = sort.name_as_str();
     let canvas_ref = create_node_ref::<Canvas>();
@@ -179,6 +180,7 @@ fn DisplaySort(
                 volume,
                 array_access,
                 array_swap,
+                array_cmp,
             };
             sorter_holder = Some(sort.init(params));
         }
@@ -216,16 +218,21 @@ fn DisplaySort(
             <div class="d-flex justify-content-start h-75 p-2">
                 <canvas class="col-11 border border-1 rounded border-danger" _ref=canvas_ref />
             </div>
-            <Details array_access array_swap/>
+            <Details array_access array_swap array_cmp/>
         </div>
     }
 }
 
 #[component]
-fn Details(array_access: RwSignal<usize>, array_swap: RwSignal<usize>) -> impl IntoView {
+fn Details(
+    array_access: RwSignal<usize>,
+    array_swap: RwSignal<usize>,
+    array_cmp: RwSignal<usize>,
+) -> impl IntoView {
     view! {
-        <div class="ps-2">"Array access: "{move || array_access.get()}</div>
-        <div class="ps-2">"Array swap: "{move || array_swap.get()}</div>
+        <div class="ps-2">"Array accesses: "{move || array_access.get()}</div>
+        <div class="ps-2">"Array updates: "{move || array_swap.get()}</div>
+        <div class="ps-2">"Comparisons: "{move || array_cmp.get()}</div>
     }
 }
 

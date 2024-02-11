@@ -39,10 +39,11 @@ impl VisualSort for Bubble {
             self.x = x;
             for y in self.y..self.base.data.len() - x - 1 {
                 self.y = y;
-                self.base.array_access.update(|n| *n += 1);
+                self.base.array_access.update(|n| *n += 2);
+                self.base.array_cmp.update(|n| *n += 1);
                 if self.base.data[y] > self.base.data[y + 1] {
-                    self.base.data.swap(y, y + 1);
                     self.base.array_swap.update(|n| *n += 1);
+                    self.base.data.swap(y, y + 1);
                     self.base.set_freq(self.base.data[y + 1]);
                     return;
                 }

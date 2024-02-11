@@ -99,7 +99,8 @@ impl Heap {
 
     fn heap_up(&mut self, i: usize) {
         if let Some(p) = self.parent(i) {
-            self.base.array_access.update(|n| *n += 1);
+            self.base.array_access.update(|n| *n += 2);
+            self.base.array_cmp.update(|n| *n += 1);
             if self.base.data[p] < self.base.data[i] {
                 self.base.array_swap.update(|n| *n += 1);
                 self.base.data.swap(p, i);
@@ -118,12 +119,14 @@ impl Heap {
         let r = self.right_child(i);
         let mut largest = i;
 
-        self.base.array_access.update(|n| *n += 1);
+        self.base.array_access.update(|n| *n += 2);
+        self.base.array_cmp.update(|n| *n += 1);
         if l < self.heap_len && data[l] > data[largest] {
             largest = l;
         }
 
-        self.base.array_access.update(|n| *n += 1);
+        self.base.array_access.update(|n| *n += 2);
+        self.base.array_cmp.update(|n| *n += 1);
         if r < self.heap_len && data[r] > data[largest] {
             largest = r;
         }
@@ -149,6 +152,8 @@ impl Heap {
             return None;
         }
 
+        self.base.array_access.update(|n| *n += 2);
+        self.base.array_swap.update(|n| *n += 1);
         let value = Some(self.base.data[0]);
         self.heap_len -= 1;
         self.base.data[0] = self.base.data[self.heap_len];

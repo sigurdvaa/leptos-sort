@@ -92,7 +92,8 @@ impl VisualSort for Merge {
                 let arr_l = state.arr_l.borrow();
                 let arr_r = state.arr_r.borrow();
                 if state.l < arr_l.len() && state.r < arr_r.len() {
-                    self.base.array_access.update(|n| *n += 1);
+                    self.base.array_access.update(|n| *n += 2);
+                    self.base.array_cmp.update(|n| *n += 1);
                     self.base.array_swap.update(|n| *n += 1);
                     if arr_l[state.l] < arr_r[state.r] {
                         arr[state.l + state.r] = arr_l[state.l];
@@ -113,6 +114,8 @@ impl VisualSort for Merge {
             }
 
             if state.s < state.arr.borrow().len() {
+                self.base.array_access.update(|n| *n += 1);
+                self.base.array_swap.update(|n| *n += 1);
                 let value = state.arr.borrow()[state.s];
                 self.base.set_freq(value);
                 self.base.data[state.start_i + state.s] = value;

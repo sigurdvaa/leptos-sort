@@ -45,7 +45,8 @@ impl VisualSort for Selection {
     fn update(&mut self) {
         if self.x < self.base.data.len() - 1 {
             if self.y < self.base.data.len() {
-                self.base.array_access.update(|n| *n += 1);
+                self.base.array_access.update(|n| *n += 2);
+                self.base.array_cmp.update(|n| *n += 1);
                 if self.base.data[self.y] < self.base.data[self.s] {
                     self.s = self.y;
                     self.base.set_freq(self.base.data[self.s]);
