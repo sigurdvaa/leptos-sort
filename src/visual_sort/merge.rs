@@ -1,5 +1,4 @@
-use super::{SortBase, VisualSort};
-use crate::BoostrapColor;
+use super::{Color, SortBase, VisualSort};
 use leptos::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -52,19 +51,17 @@ impl VisualSort for Merge {
         }
 
         match self.stack.last() {
-            None => self
-                .base
-                .draw(|_done: bool, _i: usize| BoostrapColor::Red.as_str()),
+            None => self.base.draw(|_done: bool, _i: usize| Color::Red.as_str()),
             Some(state) => self.base.draw(move |done: bool, i: usize| {
                 if !done && i == (state.start_i + state.s).saturating_sub(1) {
-                    BoostrapColor::Light.as_str()
+                    Color::Light.as_str()
                 } else if !done
                     && (i == state.start_i
                         || i == state.start_i + state.arr.borrow().len().saturating_sub(1))
                 {
-                    BoostrapColor::Green.as_str()
+                    Color::Green.as_str()
                 } else {
-                    BoostrapColor::Red.as_str()
+                    Color::Red.as_str()
                 }
             }),
         }

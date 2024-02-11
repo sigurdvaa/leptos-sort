@@ -10,22 +10,6 @@ use wasm_bindgen::{prelude::Closure, JsCast};
 
 type Callback = Rc<RefCell<Closure<dyn FnMut(f64)>>>;
 
-enum BoostrapColor {
-    Green,
-    Light,
-    Red,
-}
-
-impl BoostrapColor {
-    fn as_str(&self) -> &str {
-        match self {
-            Self::Green => "#198754",
-            Self::Light => "#dddddd",
-            Self::Red => "#dc3545",
-        }
-    }
-}
-
 fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
     console_error_panic_hook::set_once();

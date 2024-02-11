@@ -1,5 +1,4 @@
-use super::{SortBase, VisualSort};
-use crate::BoostrapColor;
+use super::{Color, SortBase, VisualSort};
 use leptos::*;
 
 pub struct Selection {
@@ -30,11 +29,11 @@ impl VisualSort for Selection {
 
         self.base.draw(|done: bool, i: usize| {
             if !done && i == self.y {
-                BoostrapColor::Light.as_str()
+                Color::Light.as_str()
             } else if !done && (i == self.x || i == self.s) {
-                BoostrapColor::Green.as_str()
+                Color::Green.as_str()
             } else {
-                BoostrapColor::Red.as_str()
+                Color::Red.as_str()
             }
         });
     }

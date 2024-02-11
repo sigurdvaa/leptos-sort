@@ -1,5 +1,4 @@
-use super::{SortBase, VisualSort};
-use crate::BoostrapColor;
+use super::{Color, SortBase, VisualSort};
 use leptos::*;
 
 pub struct Counting {
@@ -37,12 +36,12 @@ impl VisualSort for Counting {
         self.base.draw(|done: bool, i: usize| {
             if !done && i == self.x.saturating_sub(1) {
                 if !self.maxed || !self.counted {
-                    BoostrapColor::Light.as_str()
+                    Color::Light.as_str()
                 } else {
-                    BoostrapColor::Green.as_str()
+                    Color::Green.as_str()
                 }
             } else {
-                BoostrapColor::Red.as_str()
+                Color::Red.as_str()
             }
         });
     }

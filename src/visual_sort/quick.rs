@@ -1,5 +1,4 @@
-use super::{SortBase, VisualSort};
-use crate::BoostrapColor;
+use super::{Color, SortBase, VisualSort};
 use leptos::*;
 
 struct QuickState {
@@ -49,11 +48,11 @@ impl VisualSort for Quick {
 
         self.base.draw(|done: bool, i: usize| {
             if !done && (i == curr_hi || i == curr_lo) {
-                BoostrapColor::Green.as_str()
+                Color::Green.as_str()
             } else if !done && (i == curr_pivot || i == curr_i) {
-                BoostrapColor::Light.as_str()
+                Color::Light.as_str()
             } else {
-                BoostrapColor::Red.as_str()
+                Color::Red.as_str()
             }
         });
     }

@@ -1,5 +1,4 @@
-use super::{SortBase, VisualSort};
-use crate::BoostrapColor;
+use super::{Color, SortBase, VisualSort};
 use leptos::*;
 
 pub struct Bubble {
@@ -24,9 +23,9 @@ impl VisualSort for Bubble {
 
         self.base.draw(|done: bool, i: usize| {
             if !done && i == self.y + 1 {
-                BoostrapColor::Light.as_str()
+                Color::Light.as_str()
             } else {
-                BoostrapColor::Red.as_str()
+                Color::Red.as_str()
             }
         });
     }

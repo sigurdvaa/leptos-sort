@@ -12,6 +12,22 @@ mod quick;
 mod radix;
 mod selection;
 
+enum Color {
+    Green,
+    Light,
+    Red,
+}
+
+impl Color {
+    fn as_str(&self) -> &str {
+        match self {
+            Self::Green => "#198754",
+            Self::Light => "#dddddd",
+            Self::Red => "#dc3545",
+        }
+    }
+}
+
 pub struct SortParams<'a> {
     pub canvas_ref: &'a NodeRef<html::Canvas>,
     pub items: usize,
