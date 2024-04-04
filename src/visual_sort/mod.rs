@@ -127,7 +127,7 @@ impl SortBase {
             .canvas_ref
             .get_untracked()
             .expect("canvas should exist");
-        let canvas_w = (canvas.client_width() as f64 / len) * len;
+        let canvas_w = canvas.client_width() as f64;
         let canvas_h = canvas.client_height() as f64;
         canvas.set_width(canvas_w as u32);
         canvas.set_height(canvas_h as u32);
@@ -155,7 +155,7 @@ impl SortBase {
         // no spacing if low pixel per item
         let spacing = if canvas_w / len > 4.0 { 2.0 } else { 0.0 };
 
-        // how wide can one item be to for all items to fill the canvas, no spacing front or end
+        // how wide can one item be for all items to fill the canvas, no spacing front or end
         let col_width = (canvas_w + spacing - (spacing * len)) / len;
         let col_height_pct = canvas_h / len;
 
